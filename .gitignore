@@ -13,3 +13,12 @@ npm-debug.log*
 .DS_Store
 
 *.tsbuildinfo
+
+# --- Python (pipeline/) ---
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+

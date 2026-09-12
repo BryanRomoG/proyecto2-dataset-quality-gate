@@ -1,0 +1,36 @@
+{
+  "info": {
+    "description": "Dataset exportado desde el Portal de Anotación de Imágenes",
+    "version": "1.0",
+    "date_created": "2026-09-12T00:00:00.000Z"
+  },
+  "licenses": [],
+  "images": [
+    { "id": 1, "file_name": "img-001.jpg", "width": 640, "height": 480 },
+    { "id": 2, "file_name": "img-002.jpg", "width": 640, "height": 480 }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [10, 20, 100, 150],
+      "area": 15000,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [5, 5, 50, 60],
+      "area": 3000,
+      "iscrowd": 0,
+      "segmentation": []
+    }
+  ],
+  "categories": [
+    { "id": 1, "name": "car", "supercategory": "none" },
+    { "id": 2, "name": "person", "supercategory": "none" }
+  ]
+}
