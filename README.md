@@ -1,0 +1,111 @@
+# Portal de Anotación de Imágenes
+
+Portal web para anotar imágenes con bounding boxes, gestionar categorías, revisar métricas en un dashboard y exportar el dataset en formato COCO.
+
+## Stack
+
+- Frontend: React + TypeScript + Vite
+- Backend: Express + TypeScript (sirve el build de Vite — un solo proceso, un solo puerto)
+- Validación: Zod 4
+- ORM: Drizzle · Base de datos: MariaDB · Imágenes: MinIO
+- Anotador: Konva + react-konva · Dashboard: Recharts
+- Testing: Vitest + React Testing Library · BDD: Cucumber.js
+- Calidad: Biome · Entorno: Docker Compose
+
+## Estado actual
+
+Proyecto completo y funcional: portal de anotación de imágenes con persistencia real,
+dashboard de métricas, búsqueda con filtros y exportación a formato COCO.
+
+- **Monolito real, un solo puerto**: Express sirve el build de Vite en producción; en desarrollo corre Vite en modo middleware dentro del mismo proceso Express (con HMR). No hay dos servidores ni dos puertos que coordinar — `npm run dev` levanta todo.
+- **Config por entorno con Zod**: `server/src/config/env.ts` valida `process.env` (cargado desde `.env` con `dotenv`) al arrancar. Si falta o está mal una variable, el server falla rápido con un mensaje claro en vez de fallar más adelante de forma confusa.
+- **`.env.example`** versionado con placeholders (sin secretos reales) para MariaDB y MinIO. `.env` real está en `.gitignore`.
+- **Docker Compose** con tres servicios (`app`, `mariadb`, `minio`), healthchecks, y todas las credenciales/puertos/buckets leídos de `.env` — nada hardcodeado.
+- **TypeScript estricto**: `tsconfig.base.json` (compartido) + `tsconfig.client.json` / `tsconfig.server.json`, con `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. `npm run typecheck` pasa sin errores.
+- **Biome** configurado (`biome.json`) prohibiendo `any` explícito y `console.log`, con `npm run check` en 0 errores / 0 warnings.
+- **Separación UI / Lógica / Datos**: la UI (`client/`) nunca importa nada de `server/src/db` ni del cliente de MinIO. Todo pasa por `/api/*` (`server/src/routes/`).
+- **Persistencia**: esquema Drizzle (imágenes, anotaciones, categorías) con FKs, índices y tipos correctos; migraciones versionadas que se aplican desde cero sin pasos manuales; seeder idempotente con categorías e imágenes de ejemplo (subidas de verdad a MinIO).
+- **Portal de anotación**: subida de imágenes con validación de tipo/tamaño y feedback; editor de bounding boxes (Konva) con crear/mover/redimensionar/borrar y persistencia al recargar; categorías con color y validación de clase obligatoria; zoom, deshacer, navegación entre imágenes y "guardar y siguiente".
+- **Dashboard**: métricas calculadas desde la BD (nunca hardcodeadas) y gráficas por categoría/progreso (Recharts).
+- **Búsqueda**: operadores tipo `car AND person` resueltos en SQL (no en memoria), filtros combinables por clase/estado/rango de fechas, con paginación correcta.
+- **Exportación COCO**: JSON válido con `images`/`annotations`/`categories`, ids consistentes, `bbox` en píxeles absolutos, `area` coherente, `iscrowd` presente, descarga completa del dataset desde la UI.
+- **Vitest** (unit/integración) y **Cucumber.js** (Gherkin, con trazabilidad SPEC → `.feature` → step definitions) cubriendo las reglas críticas de negocio, incluidas anotación y exportación COCO.
+
+Verificado end-to-end: `npm install`, `npm run typecheck`, `npm run check`, `npm test`, `npm run test:bdd`, `docker compose up mariadb minio -d` + `npm run db:migrate` + `npm run db:seed` + `npm run dev` sirviendo la app en `:3000`, y `docker compose up --build` sirviendo el monolito completo en `:3100`.
+
+## Cómo correrlo
+
+### Requisitos
+
+- Node.js 22+
+- Docker y Docker Compose
+
+### Clonar
+
+```bash
+git clone https://github.com/Andy-752109/Proyecto01_IDC.git
+cd Proyecto01_IDC
+```
+
+### Setup inicial
+
+```bash
+cp .env.example .env
+npm install
+```
+
+### Desarrollo (hot reload, puerto 3000)
+
+Levanta solo la infraestructura (MariaDB + MinIO) con Docker, y el proceso Node de la app en local:
+
+```bash
+docker compose up mariadb minio -d
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+App disponible en `http://localhost:3000`. Health check: `http://localhost:3000/api/health`.
+
+Para parar: `Ctrl+C` en la terminal de `npm run dev`, y `docker compose down`.
+
+### Producción / monolito completo (puerto 3100)
+
+```bash
+docker compose up --build
+```
+
+Levanta app + MariaDB + MinIO con un solo comando. La app sirve el build de React y la API desde el mismo proceso/puerto. El puerto de este servicio está fijo en `3100` dentro de `docker-compose.yml` (no depende de `PORT` en tu `.env`, que sigue siendo `3000` para el modo on-premise) — no hace falta editar nada a mano entre un modo y otro.
+
+### Scripts
+
+| Script | Qué hace |
+|---|---|
+| `npm run dev` | Servidor Express + Vite en modo middleware (HMR), puerto `PORT` (default 3000) |
+| `npm run build` | Build de producción del cliente (`client/dist`) |
+| `npm start` | Arranca el servidor en modo producción (sirve `client/dist`) |
+| `npm run typecheck` | `tsc --noEmit` sobre cliente y servidor (TypeScript estricto) |
+| `npm test` | Pruebas unitarias/componentes (Vitest) |
+| `npm run test:bdd` | Escenarios Gherkin (Cucumber.js) |
+| `npm run check` | Lint + format check (Biome) |
+| `npm run check:fix` | Autofix de Biome |
+
+## Estructura
+
+```
+client/            React + Vite (UI)
+server/src/
+  index.ts         Entry point: Express + integración Vite
+  config/env.ts     Config validada con Zod (.env)
+  routes/           Routers de la API (/api/*)
+  lib/minio.ts       Cliente MinIO
+  db/               Esquema Drizzle, migraciones, seeder (ver server/src/db/README.md)
+features/           SPECs en Gherkin + step definitions (ver features/README.md)
+```
+
+La UI nunca accede a MariaDB ni a MinIO directamente: todo pasa por `/api/*` en el servidor Express.
+
+## Pendiente (fuera del alcance de la rúbrica)
+
+- CI (lint + typecheck + tests en cada push/PR).
+- Decidir si se agrega autenticación (no está en la rúbrica como requisito explícito).
