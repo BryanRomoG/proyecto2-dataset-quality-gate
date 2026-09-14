@@ -13,3 +13,20 @@ npm-debug.log*
 .DS_Store
 
 *.tsbuildinfo
+
+# Python (pipeline/ — Frentes 2-6, 8, 10)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.mypy_cache/
+
+# Terraform (Frente 9) — nunca versionar estado ni secretos
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
