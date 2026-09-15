@@ -15,14 +15,20 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    NonNegativeFloat,
     PositiveInt,
     field_validator,
     model_validator,
 )
 
 # [x, y, width, height] en píxeles absolutos.
-CocoBbox = tuple[float, float, NonNegativeFloat, NonNegativeFloat]
+#
+# Deliberadamente NO se restringe a valores no negativos aquí, a diferencia
+# del schema Zod del portal: un width/height negativo, una caja fuera de los
+# límites de la imagen, o un `area` inconsistente con width*height son
+# defectos de *calidad* que debe detectar y reportar el analizador de cajas
+# inválidas (Frente 3, SPEC-F3-04) — no algo que la ingesta rechace antes de
+# que el analizador los vea. Esta capa solo valida forma (tipo y aridad).
+CocoBbox = tuple[float, float, float, float]
 
 
 def _reject_blank(value: str, field_name: str) -> str:
@@ -79,7 +85,7 @@ class CocoAnnotation(BaseModel):
     image_id: PositiveInt
     category_id: PositiveInt
     bbox: CocoBbox
-    area: NonNegativeFloat
+    area: float  # puede ser incoherente con width*height; eso lo detecta SPEC-F3-04
     iscrowd: Literal[0, 1]
     segmentation: list[list[float]]
 

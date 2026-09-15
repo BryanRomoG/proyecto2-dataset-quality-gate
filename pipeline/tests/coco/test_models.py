@@ -63,3 +63,18 @@ def test_orphan_image_id_is_rejected(valid_dataset_dict: dict) -> None:
     error_text = str(exc_info.value)
     assert "image_id" in error_text
     assert "555" in error_text
+
+
+def test_negative_width_bbox_is_structurally_valid(valid_dataset_dict: dict) -> None:
+    """Width/height negativos NO se rechazan aquí a propósito.
+
+    Es un defecto de calidad (caja degenerada), no estructural — debe llegar
+    vivo hasta el analizador de cajas inválidas (Frente 3, SPEC-F3-04) para
+    que ese analizador lo detecte y lo reporte.
+    """
+    dataset_dict = copy.deepcopy(valid_dataset_dict)
+    dataset_dict["annotations"][0]["bbox"] = [10, 20, -50, 100]
+
+    dataset = CocoDataset.model_validate(dataset_dict)
+
+    assert dataset.annotations[0].bbox == (10, 20, -50, 100)
