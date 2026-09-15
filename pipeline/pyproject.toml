@@ -5,11 +5,14 @@ description = "Pipeline de calidad y versionado de datasets (Proyecto 2, MLOps)"
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.7,<3",
+    "pydantic-settings>=2.4,<3",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-bdd>=7.0",
     "ruff>=0.6",
 ]
 
