@@ -7,6 +7,8 @@ dependencies = [
     "pydantic>=2.7,<3",
     "pydantic-settings>=2.4,<3",
     "pyyaml>=6.0",
+    "Pillow>=10.0",
+    "ImageHash>=4.3",
 ]
 
 [project.optional-dependencies]
