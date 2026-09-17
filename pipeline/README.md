@@ -38,7 +38,7 @@ pytest
   escenarios de Gherkin de SPEC-F2-01/02, con sus step definitions en
   `tests/step_defs/`.
 
-## Contenido (Frente 3 — T-202)
+## Contenido (Frente 3 — T-2.2)
 
 Cinco analizadores en `src/dataset_pipeline/analyzers/`, todos funciones
 puras: reciben datos como parámetro (dataset, conteos, imágenes ya cargadas
@@ -70,3 +70,33 @@ de que lo haga el evaluador.
 
 Fuera de alcance: la compuerta que decide warn/fail sobre estos resultados
 (Frente 4, T-203).
+
+## Contenido (Frente 5 — T-3.1)
+
+`src/dataset_pipeline/splits/stratified.py` — split train/val/test
+estratificado, reproducible por semilla y sin fuga de near-duplicates:
+
+- **Estratificado**: agrupa imágenes por "firma" (el conjunto de clases que
+  contienen) y reparte cada grupo proporcionalmente — así cada combinación
+  de clases queda representada en las tres particiones, no solo la más
+  común.
+- **Reproducible**: usa `random.Random(seed)` sobre listas siempre
+  ordenadas antes de barajar (nunca la iteración de un `set`/`dict`, que no
+  está garantizada) — dos corridas con la misma semilla dan exactamente la
+  misma asignación (verificado con un script independiente, no solo el
+  test).
+- **Cero fuga**: los pares de near-duplicates de `find_duplicate_pairs`
+  (T-2.2) se resuelven con union-find en clusters — todas las imágenes de
+  un cluster van siempre al mismo split, aunque eso rompa un poco la
+  proporción exacta de ese grupo.
+
+Specs en `features/specs/f5-01-splits.feature`, con step definitions en
+`tests/step_defs/test_f5_01_splits.py`.
+
+**Pendiente antes de cerrar el ticket (parte del DoD):** correr esto contra
+el COCO real del portal una vez cerrada la anotación (T-201) y documentar
+el resultado — con datos sintéticos ya está probado, pero el DoD pide la
+verificación contra datos reales.
+
+Fuera de alcance: el pipeline DVC que versiona estos splits (Frente 6,
+T-3.2).
