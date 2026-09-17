@@ -43,7 +43,7 @@ Verificado end-to-end: `npm install`, `npm run typecheck`, `npm run check`, `npm
 ### Clonar
 
 ```bash
-git clone https://github.com/Andy-752109/proyecto2-dataset-quality-gate.git
+git clone https://github.com/BryanRomoG/proyecto2-dataset-quality-gate.git
 cd proyecto2-dataset-quality-gate
 ```
 
