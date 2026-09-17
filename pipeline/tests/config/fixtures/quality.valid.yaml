@@ -1,0 +1,7 @@
+checks:
+  min_images_per_class:
+    threshold: 300
+    severity: fail
+  small_objects_ratio:
+    threshold: 0.1
+    severity: warn
