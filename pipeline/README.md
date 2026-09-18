@@ -258,6 +258,24 @@ dvc pull -r prod                          # trae lo que subieron los demás
 dvc checkout --force
 ```
 
+**Anotar y exportar tu lote** (cada contribuidor, en su propio portal
+local — `docker compose up -d` + `npm run dev`, ver README raíz):
+
+1. Sube y anota tus imágenes normalmente en `http://localhost:3000`.
+   ⚠️ Usa exactamente los nombres de categoría acordados por el equipo
+   (p. ej. `car` y `person`, en minúsculas) — `merge.py` unifica
+   categorías por nombre exacto; `"Car"` con mayúscula crea una categoría
+   duplicada en vez de sumarse a la existente.
+2. Exporta el JSON: botón "COCO" en el portal (`GET /api/export/coco`).
+3. Exporta las imágenes: no hay endpoint de descarga masiva en la app
+   todavía, así que se bajan directo de MinIO — consola web en
+   `http://localhost:9001` (usuario/password de tu `.env`,
+   `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY`) y descarga el contenido del
+   bucket (`MINIO_BUCKET`, default `annotation-images`). Alternativa con
+   el cliente `mc`: `mc mirror local/annotation-images ./mi-lote/`.
+4. Comparte el `.json` + la carpeta de imágenes con quien vaya a fusionar
+   los lotes (Drive, zip, USB — logística de equipo, no de la app).
+
 **Fusionar el lote de otro contribuidor sin colisión de IDs** (T-3.2b,
 `pipeline/src/dataset_pipeline/coco/merge.py`): dos exports independientes
 del portal (`GET /api/export/coco`) siempre van a reusar los mismos rangos
