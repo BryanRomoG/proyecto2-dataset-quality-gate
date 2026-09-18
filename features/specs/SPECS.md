@@ -108,6 +108,17 @@ primer SPEC. Los `.feature` viven en `features/specs/`, con nombre
   volver a retirar un modelo sin aviso — si eso rompe el Copilot en el
   futuro, este es el motivo más probable, y `GEMINI_MODEL` en `.env` se
   puede cambiar sin tocar código.
+- **El 503 de arriba no era un capricho del modelo elegido, sino la capa
+  gratuita saturándose bajo carga** — así que además de fijar un modelo
+  más estable, `GeminiClient` reintenta con cooldown (backoff exponencial
+  + jitter, 3 intentos por defecto) cualquier 429 (cuota agotada) o 5xx
+  (sobrecarga/mantenimiento) que el SDK reporte como
+  `google.genai.errors.APIError`. Un 404/400 (modelo inexistente, API key
+  inválida) nunca se reintenta: no es un problema transitorio, es una
+  configuración que hay que corregir a mano, y reintentarlo solo tarda más
+  en fallar. Probado sin red real en `tests/copilot/test_llm_retry.py`,
+  fabricando los mismos errores que devuelve el SDK contra un chat falso
+  y con la función `sleep` inyectada (no duerme de verdad en tests).
 - **`mcp` SDK 2.x renombró `FastMCP` a `MCPServer`** entre lo documentado
   en tutoriales públicos (basados en 1.x) y la versión instalada
   (`mcp==2.2.0`); se detectó de inmediato porque el import fallaba con un
