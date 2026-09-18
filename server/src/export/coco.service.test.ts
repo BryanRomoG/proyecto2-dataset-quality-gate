@@ -7,8 +7,20 @@ const fixture: CocoSourceData = {
     { id: 2, name: 'person' },
   ],
   images: [
-    { id: 10, storageKey: 'uploads/street-01.jpg', width: 1280, height: 720 },
-    { id: 11, storageKey: 'uploads/park-01.jpg', width: 1024, height: 768 },
+    {
+      id: 10,
+      filename: 'street-01.jpg',
+      storageKey: 'images/0a1b2c3d-1111-4222-8333-444455556666-street-01.jpg',
+      width: 1280,
+      height: 720,
+    },
+    {
+      id: 11,
+      filename: 'park-01.jpg',
+      storageKey: 'images/9f8e7d6c-aaaa-4bbb-8ccc-ddddeeeeffff-park-01.jpg',
+      width: 1024,
+      height: 768,
+    },
   ],
   annotations: [
     { id: 100, imageId: 10, categoryId: 1, x: 12, y: 20, width: 150, height: 80 },
@@ -83,5 +95,21 @@ describe('buildCocoDataset', () => {
     };
 
     expect(() => buildCocoDataset(brokenFixture)).toThrow();
+  });
+
+  // Regresión: file_name antes traía el storageKey completo
+  // ("images/<uuid>-nombre.jpg"). Los modelos Pydantic del pipeline
+  // (CocoImage.file_name) rechazan cualquier ruta, así que ningún export real
+  // del portal se podía validar sin normalizarlo a mano.
+  it('exporta file_name como el nombre original, sin carpeta ni UUID de almacenamiento', () => {
+    const dataset = buildCocoDataset(fixture);
+
+    expect(dataset.images.map((image) => image.file_name)).toEqual([
+      'street-01.jpg',
+      'park-01.jpg',
+    ]);
+    for (const image of dataset.images) {
+      expect(image.file_name).not.toMatch(/[\\/]|\.\./);
+    }
   });
 });

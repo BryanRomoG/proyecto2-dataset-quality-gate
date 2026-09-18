@@ -15,6 +15,8 @@ export interface CategoryRow {
 
 export interface ImageRow {
   id: number;
+  filename: string;
+  // Se recibe pero NO se exporta como file_name (ver buildCocoDataset).
   storageKey: string;
   width: number;
   height: number;
@@ -48,7 +50,10 @@ export function buildCocoDataset(source: CocoSourceData): CocoDataset {
 
   const cocoImages: CocoImage[] = source.images.map((image) => ({
     id: image.id,
-    file_name: image.storageKey,
+    // Nombre original del archivo, NO el storageKey ("images/<uuid>-nombre.jpg"):
+    // el pipeline (CocoImage.file_name) rechaza cualquier ruta, y el UUID solo
+    // existe para no colisionar dentro del bucket de MinIO.
+    file_name: image.filename,
     width: image.width,
     height: image.height,
   }));
