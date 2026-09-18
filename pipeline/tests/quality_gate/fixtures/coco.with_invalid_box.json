@@ -1,0 +1,25 @@
+{
+  "info": {
+    "description": "Fixture con una caja degenerada (width negativo)",
+    "version": "1.0",
+    "date_created": "2026-09-17T00:00:00.000Z"
+  },
+  "licenses": [],
+  "images": [
+    { "id": 1, "file_name": "img-001.jpg", "width": 640, "height": 480 }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [10, 10, -20, 20],
+      "area": 400,
+      "iscrowd": 0,
+      "segmentation": []
+    }
+  ],
+  "categories": [
+    { "id": 1, "name": "car", "supercategory": "none" }
+  ]
+}
