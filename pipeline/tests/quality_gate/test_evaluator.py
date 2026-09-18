@@ -65,3 +65,33 @@ def test_check_sin_metrica_calculada_lanza_error_con_el_nombre_del_check():
 
     with pytest.raises(UnknownCheckError, match="min_images_per_class"):
         evaluate(metric_values={}, policy=policy)
+
+
+# --- SPEC-F4-04: el reporte trae valor vs umbral Y muestras ofensoras,
+# no solo un booleano ---
+
+
+def test_reporte_incluye_las_muestras_ofensoras_cuando_se_proveen():
+    policy = _policy(threshold=300, severity="fail")
+
+    report = evaluate(
+        metric_values={"min_images_per_class": 250},
+        policy=policy,
+        offending_samples={"min_images_per_class": ["person"]},
+    )
+
+    [result] = report.checks
+    assert result.offending_samples == ["person"]
+
+
+def test_reporte_no_es_solo_un_booleano_trae_valor_y_umbral_siempre():
+    policy = _policy(threshold=300, severity="fail")
+
+    report = evaluate(metric_values={"min_images_per_class": 250}, policy=policy)
+
+    [result] = report.checks
+    assert result.value == 250
+    assert result.threshold == 300
+    # Sin muestras provistas explícitamente, la lista queda vacía (no None,
+    # no ausente) — el campo siempre existe en el reporte.
+    assert result.offending_samples == []

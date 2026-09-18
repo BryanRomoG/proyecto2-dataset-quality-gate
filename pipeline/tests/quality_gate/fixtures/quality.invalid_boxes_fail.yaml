@@ -1,0 +1,7 @@
+checks:
+  min_images_per_class:
+    threshold: 1
+    severity: fail
+  invalid_boxes_count:
+    threshold: 0
+    severity: fail

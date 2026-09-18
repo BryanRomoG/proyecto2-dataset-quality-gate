@@ -57,6 +57,53 @@ def test_main_regresa_1_cuando_el_umbral_no_se_cumple(tmp_path):
     assert report["passed"] is False
 
 
+# --- SPEC-F4-04: quality.json trae muestras ofensoras, alimentadas por los
+# analizadores reales de T-2.2 (Ale), no solo un booleano ---
+
+
+def test_min_images_per_class_reporta_que_clases_quedaron_por_debajo(tmp_path):
+    output = tmp_path / "quality.json"
+
+    main(
+        [
+            "--coco",
+            str(COCO),
+            "--policy",
+            str(FIXTURES / "quality.impossible_threshold.yaml"),
+            "--output",
+            str(output),
+        ]
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    [check] = [c for c in report["checks"] if c["name"] == "min_images_per_class"]
+    # Con el umbral imposible, TODAS las clases del fixture quedan por
+    # debajo -> deben aparecer nombradas, no solo el booleano passed=false.
+    assert set(check["offending_samples"]) == {"car", "person"}
+
+
+def test_invalid_boxes_count_se_evalua_y_reporta_las_anotaciones_ofensoras(tmp_path):
+    output = tmp_path / "quality.json"
+
+    exit_code = main(
+        [
+            "--coco",
+            str(FIXTURES / "coco.with_invalid_box.json"),
+            "--policy",
+            str(FIXTURES / "quality.invalid_boxes_fail.yaml"),
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert exit_code == 1
+    report = json.loads(output.read_text(encoding="utf-8"))
+    [check] = [c for c in report["checks"] if c["name"] == "invalid_boxes_count"]
+    assert check["passed"] is False
+    assert check["value"] == 1.0
+    assert check["offending_samples"] == ["1"]
+
+
 def test_t203_subproceso_real_con_umbral_imposible_termina_con_exit_code_distinto_de_cero(
     tmp_path,
 ):
