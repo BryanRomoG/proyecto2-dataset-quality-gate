@@ -1,0 +1,66 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform.yml'
+
+# Requerido por OIDC: sin esto GitHub no emite el token de identidad que
+# aws-actions/configure-aws-credentials necesita para pedir credenciales
+# temporales via sts:AssumeRoleWithWebIdentity.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: "1.9.8"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        layer: [network, data, storage, compute]
+    defaults:
+      run:
+        working-directory: infra/${{ matrix.layer }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Cero llaves estáticas: se autentica con el rol IAM de solo lectura
+      # creado en infra/cicd/ vía OIDC, nunca con AWS_ACCESS_KEY_ID/SECRET.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform fmt (todo infra/)
+        if: matrix.layer == 'network'
+        working-directory: infra
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="use_lockfile=true"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        env:
+          TF_VAR_network_state_bucket: ${{ vars.TF_STATE_BUCKET }}
+        run: terraform plan -input=false -lock-timeout=60s

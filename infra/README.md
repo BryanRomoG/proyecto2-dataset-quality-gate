@@ -2,7 +2,7 @@
 
 Terraform por capas: `network` → `data` → `storage` → `compute`. Cada capa
 tiene su propio state remoto en S3 (nunca `.tfstate` local, excepto
-`bootstrap/`, ver más abajo) y se referencian entre sí vía
+`bootstrap/` y `cicd/`, ver más abajo) y se referencian entre sí vía
 `terraform_remote_state`, no copiando valores a mano.
 
 ## Orden de aplicación
@@ -10,13 +10,17 @@ tiene su propio state remoto en S3 (nunca `.tfstate` local, excepto
 1. **`bootstrap/`** — una sola vez, crea el bucket S3 de remote state.
    Backend local a propósito (huevo y gallina): no puede vivir en el S3
    que él mismo crea.
-2. **`network/`** — VPC, subredes públicas/privadas, NAT, VPC endpoint de
+2. **`cicd/`** — una sola vez, crea el OIDC provider de GitHub Actions y el
+   rol IAM de solo lectura que usa el workflow de CI (ver sección
+   "GitHub Actions (OIDC, sin llaves estáticas)" más abajo). También
+   backend local, por la misma razón que `bootstrap/`.
+3. **`network/`** — VPC, subredes públicas/privadas, NAT, VPC endpoint de
    S3 (Gateway).
-3. **`data/`** — RDS MariaDB, credenciales en Secrets Manager (nunca en
+4. **`data/`** — RDS MariaDB, credenciales en Secrets Manager (nunca en
    `.tf` ni hardcodeadas).
-4. **`storage/`** — bucket S3 del dataset, con policy restringida al VPC
+5. **`storage/`** — bucket S3 del dataset, con policy restringida al VPC
    endpoint creado en `network/`.
-5. **`compute/`** — ECS Fargate + ALB + ECR, lee el secreto de `data/` por
+6. **`compute/`** — ECS Fargate + ALB + ECR, lee el secreto de `data/` por
    ARN (no por valor) y lo inyecta como variable de entorno segura en la
    task definition.
 
@@ -75,6 +79,44 @@ las cuatro capas y el bootstrap de una sola vez.
   por logs de `terraform plan`.
 - `backend.hcl` (con el nombre real del bucket de state) está en
   `.gitignore` — solo se commitea `backend.hcl.example`.
+
+## GitHub Actions (OIDC, sin llaves estáticas)
+
+`.github/workflows/terraform.yml` corre `fmt -check`, `validate` y `plan`
+(solo lectura, nunca `apply`) en cada PR que toque `infra/`. Se autentica
+con AWS mediante OIDC (`aws-actions/configure-aws-credentials` +
+`role-to-assume`), **nunca** con `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`
+guardadas como secret — así lo pidió la revisión de seguridad.
+
+Setup (una sola vez, requiere acceso admin a la cuenta de AWS):
+
+```bash
+cd infra/cicd
+terraform init
+terraform apply \
+  -var="github_org=BryanRomoG" \
+  -var="github_repo=proyecto2-dataset-quality-gate" \
+  -var="state_bucket_name=<state_bucket_name del bootstrap>"
+```
+
+Con el output `github_actions_role_arn`, en GitHub ir a
+**Settings → Secrets and variables → Actions → Variables** (no "Secrets":
+un ARN de rol y un nombre de bucket no son secretos, y así quedan
+disponibles para PRs desde forks igual que para el mismo repo) y crear:
+
+- `AWS_TERRAFORM_PLAN_ROLE_ARN` = el output `github_actions_role_arn`.
+- `TF_STATE_BUCKET` = el mismo bucket que devolvió `bootstrap` (el de
+  `state_bucket_name`).
+
+El rol (`infra/cicd/main.tf`) queda restringido a:
+- Confianza (`assume_role_policy`): solo `token.actions.githubusercontent.com`
+  con `aud = sts.amazonaws.com` y `sub = repo:BryanRomoG/proyecto2-dataset-quality-gate:pull_request`
+  — ningún otro repo, rama o tipo de evento puede asumirlo aunque conozca el ARN.
+- Permisos: `ReadOnlyAccess` (managed policy de AWS) más lectura/lock del
+  bucket de state — suficiente para `terraform plan`, insuficiente para
+  crear, modificar o borrar nada. El `apply` real sigue siendo manual,
+  desde la máquina de quien tenga las credenciales de administración
+  (ver "Setup inicial" arriba).
 
 ## Pendiente / a decidir con el equipo
 
