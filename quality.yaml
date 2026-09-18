@@ -1,0 +1,10 @@
+# Política de la compuerta de calidad (Frente 4, T-203).
+#
+# Validado con dataset_pipeline.config.quality.QualityPolicy — nunca se lee
+# como dict crudo de yaml.safe_load(). Los umbrales de los analizadores del
+# Frente 3 son placeholders razonables; el equipo (PM + Frente 4) debe
+# confirmarlos/ajustarlos como parte de T-101/T-203, no son definitivos.
+checks:
+  min_images_per_class:
+    threshold: 300
+    severity: fail

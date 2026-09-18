@@ -100,3 +100,101 @@ verificación contra datos reales.
 
 Fuera de alcance: el pipeline DVC que versiona estos splits (Frente 6,
 T-3.2).
+
+## Contenido (Frente 6 — T-3.2)
+
+Pipeline DVC real (`dvc.yaml` en la raíz del repo), 3 etapas con deps/outs
+propios — no una sola etapa monolítica (ver `dvc dag`):
+
+```
+data/raw/coco.json.dvc ──┐
+                          ├─> validate ──┐
+data/raw/images.dvc ─────┼──────────────┼─> analyze ──> split
+                          └──────────────┘
+```
+
+- **validate**: carga y valida el COCO (T-1.3) → `coco.validated.json`.
+- **analyze**: corre los 5 analizadores (T-2.2) contra el COCO validado y
+  las imágenes en `data/raw/images/`, usando el umbral `min_images_per_class`
+  de `quality.yaml` (nunca hardcodeado) → `quality_metrics.json`.
+- **split**: genera train/val/test (T-3.1), usando los pares de pHash que
+  ya calculó `analyze` para garantizar cero fuga → `splits.json`.
+
+**Setup necesario, una vez por máquina** (`.dvc/config.local`, nunca se
+versiona): el cache de DVC se saca de la carpeta sincronizada por OneDrive
+para evitar los mismos bloqueos de archivo que ya vimos con Git —
+si tu repo no vive en OneDrive, este paso no aplica:
+
+```bash
+dvc cache dir C:/dvc-cache --local
+dvc remote modify --local dev access_key_id minioadmin
+dvc remote modify --local dev secret_access_key minioadmin
+```
+
+**Datos de muestra**, mientras T-101 (contratos congelados) y la
+integración real con el export del portal no existan — genera un COCO
+pequeño con imágenes sintéticas reales (incluye un duplicado deliberado
+para que `analyze` tenga algo real que detectar):
+
+```bash
+python pipeline/scripts/generate_sample_coco.py \
+  --images-per-class 15 --out data/raw/coco.json --images-dir data/raw/images
+dvc add data/raw/coco.json data/raw/images
+```
+
+**Correr el pipeline:**
+
+```bash
+dvc repro          # primera vez: corre las 3 etapas
+dvc repro          # segunda vez: "Data and pipelines are up to date" — nada se rehace
+dvc dag            # confirma que son 3 etapas separadas, no una
+```
+
+Verificado con evidencia real (no solo el test): dos corridas consecutivas
+de `dvc repro` no rehacen nada; modificar solo `splits.yaml` rehace
+únicamente la etapa `split`; `git ls-files data/` no incluye ningún
+`.jpg`/`.png`/`.parquet` de nuestros datos (si aparece algo, es de los
+seed-assets de Proyecto 1, preexistente — ver nota abajo).
+
+**Remotes DEV (MinIO) y PROD (S3):**
+
+```bash
+docker compose up -d minio
+# una sola vez: crear el bucket, MinIO no lo hace solo
+docker exec <container_minio> sh -c "mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb local/dvc-dataset"
+
+dvc push -r dev              # sube el cache al MinIO real
+dvc status -r dev            # documentado abajo (parte del DoD)
+dvc status -r prod           # sin cuenta de AWS real: falla limpio, es lo esperado
+```
+
+**Verificado en vivo en esta sesión** (no solo simulado):
+- `dvc push -r dev` → `36 files pushed` contra un MinIO real levantado con
+  `docker compose up -d minio`.
+- Cache local vaciado por completo y `dvc pull -r dev` → `36 files fetched`;
+  el md5 de `data/raw/coco.json` después del pull coincide exactamente con
+  el de antes de vaciar el cache — round-trip real, no solo un conteo.
+- `dvc status -r dev` → `Cache and remote 'dev' are in sync.`
+- `dvc status -r prod` → `ERROR: unexpected error - Unable to locate
+  credentials` — esperado y documentado: no hay cuenta de AWS real todavía
+  (mismo caso que el riesgo ya aceptado en el plan para el Frente 9/Terraform:
+  se califica el código y la configuración del remote, no un despliegue en
+  vivo contra PROD).
+
+**Releases y diff entre versiones:**
+
+```bash
+python pipeline/scripts/release.py v1.0.0 -m "Primer release del dataset"
+python pipeline/scripts/diff_release.py v0.9.0 v1.0.0   # imágenes/cajas añadidas, clases bajo el mínimo
+```
+
+**Nota sobre `.jpg` en `git ls-files`:** existen 3 en
+`server/src/db/seed-assets/` — son fixtures de semilla de Proyecto 1
+(`npm run db:seed`), preexistentes desde el commit base, no parte del
+dataset de este proyecto. El chequeo de "datos fuera de Git" de T-3.2 se
+refiere a `data/` (donde sí está limpio), no a esos.
+
+Specs en `features/specs/f6-01-dvc-pipeline.feature`. El escenario de
+mismo hash DEV/PROD está marcado `@requiere_minio` y se salta solo si no
+hay remote alcanzable — no es opcional, es honesto: no hay forma de
+probar contra infraestructura real sin infraestructura real corriendo.

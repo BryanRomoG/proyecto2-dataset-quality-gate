@@ -16,6 +16,7 @@ dev = [
     "pytest>=8.0",
     "pytest-bdd>=7.0",
     "ruff>=0.6",
+    "dvc[s3]>=3.0",
 ]
 
 [build-system]
@@ -28,6 +29,9 @@ packages = ["src/dataset_pipeline"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "requiere_minio: necesita un remote DVC (MinIO) alcanzable; se salta si no lo está",
+]
 
 [tool.ruff]
 line-length = 100

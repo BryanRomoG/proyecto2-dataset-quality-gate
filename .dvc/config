@@ -1,0 +1,9 @@
+[core]
+    analytics = false
+    remote = dev
+['remote "dev"']
+    url = s3://dvc-dataset/dev
+    endpointurl = http://localhost:9000
+    use_ssl = false
+['remote "prod"']
+    url = s3://proyecto2-dataset-quality-gate-prod/dvc
