@@ -14,9 +14,9 @@ stages:
       size: 740
     - path: pipeline/src/dataset_pipeline/coco
       hash: md5
-      md5: 63a9c18be6fa83220d97345c09205b06.dir
-      size: 6265
-      nfiles: 4
+      md5: a189215e48f9d279d7846420ef376b49.dir
+      size: 10942
+      nfiles: 5
     outs:
     - path: data/processed/coco.validated.json
       hash: md5

@@ -198,3 +198,105 @@ Specs en `features/specs/f6-01-dvc-pipeline.feature`. El escenario de
 mismo hash DEV/PROD está marcado `@requiere_minio` y se salta solo si no
 hay remote alcanzable — no es opcional, es honesto: no hay forma de
 probar contra infraestructura real sin infraestructura real corriendo.
+
+## Contenido (Frente 6 — T-3.2b)
+
+El remote `prod` (S3) es el dataset compartido real del equipo — a
+diferencia de `dev` (MinIO), que es solo local a cada máquina y nunca sirve
+para colaborar. Cada persona sigue anotando en su propio portal local
+(su propia MariaDB/MinIO vía `docker compose up -d`, sin cambios); lo que se
+comparte vía `prod` es el dataset ya exportado (`data/raw/coco.json` +
+`data/raw/images/`).
+
+**Autenticación**: usuarios IAM con access key por persona (no SSO/Identity
+Center — el equipo parte de una cuenta AWS nueva, sin una AWS Organization
+ya armada por nadie más, así que IAM directo es lo más rápido de
+provisionar). Cada quien tiene su propio usuario dentro del grupo
+`mlops-p2-team`, con una policy acotada solo al bucket `prod`
+(`s3://proyecto2-dataset-quality-gate-prod`) — nadie tiene acceso al resto
+de la cuenta.
+
+**Setup por máquina, una sola vez** (no viaja con git):
+
+1. Pide tu access key (Access Key ID + Secret Access Key) a quien
+   administra la cuenta AWS del equipo — te la manda por correo, una key
+   solo para ti, nunca compartida con nadie más.
+2. Instala el AWS CLI:
+   - **Windows**: descarga
+     https://awscli.amazonaws.com/AWSCLIV2.msi y ábrelo (pide permisos de
+     administrador). Si `winget` funciona en tu máquina, alternativamente:
+     `winget install -e --id Amazon.AWSCLI`.
+   - **macOS**: `brew install awscli` (o el `.pkg` oficial).
+   - **Linux**: ver https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html.
+   - Verifica con `aws --version` (cierra y abre la terminal si acabas de instalar).
+3. Carga tu key (nunca la pegues en un chat que no sea tú tecleándola):
+   ```bash
+   aws configure --profile mlops-p2
+   # Access Key ID: <la tuya>
+   # Secret Access Key: <la tuya>
+   # Default region name: us-east-1
+   # Default output format: json
+   ```
+4. Verifica que quedó activa (no expone el secret):
+   ```bash
+   aws sts get-caller-identity --profile mlops-p2
+   ```
+5. Instala el pipeline y vincula DVC con tu perfil:
+   ```bash
+   cd pipeline && pip install -e ".[dev]"   # ya trae dvc[s3] (pyproject.toml)
+   cd ..
+   dvc remote modify --local prod profile mlops-p2   # va a .dvc/config.local, nunca se versiona
+   ```
+
+**Cada vez que se retoma trabajo** (sesión nueva — un access key IAM no
+expira como una sesión SSO, así que normalmente no hace falta repetir el
+login; solo si `aws sts get-caller-identity` falla):
+
+```bash
+docker compose up -d                      # portal local: :3000 (npm run dev) o :3100 (docker compose up --build)
+dvc pull -r prod                          # trae lo que subieron los demás
+dvc checkout --force
+```
+
+**Fusionar el lote de otro contribuidor sin colisión de IDs** (T-3.2b,
+`pipeline/src/dataset_pipeline/coco/merge.py`): dos exports independientes
+del portal (`GET /api/export/coco`) siempre van a reusar los mismos rangos
+de id porque cada MariaDB local cuenta desde su propio cero — fusionarlos
+tal cual produciría `image_id`/`annotation_id` duplicados. `merge.py`
+resuelve esto reasignando los ids del lote entrante a partir del máximo ya
+usado en el base, y unificando categorías por nombre (no por id numérico):
+
+```bash
+python pipeline/scripts/merge.py \
+  --base data/raw/coco.json \
+  --batch <export-del-companero>.json \
+  --out data/raw/coco.json
+# el script solo transforma JSON: copiar a mano los .jpg del lote a
+# data/raw/images/ antes de este paso (igual que validate.py, tampoco
+# toca archivos de imagen)
+dvc add data/raw/coco.json data/raw/images
+dvc push -r prod
+# commit solo de los .dvc — igual que ya está documentado arriba para dev
+```
+
+Si el lote entrante trae un `file_name` que ya existe en el base, `merge.py`
+falla nombrando el archivo exacto en vez de sobrescribir en silencio —
+señal de que dos compañeros nombraron algo igual y hay que coordinarse
+antes de fusionar.
+
+Specs en `features/specs/f6-02-merge-lotes.feature`, con step definitions
+en `tests/step_defs/test_f6_02_merge_lotes.py`.
+
+**Verificado en vivo:** cuenta AWS y bucket `s3://proyecto2-dataset-quality-gate-prod`
+creados, coincide con `.dvc/config`. `aws sts get-caller-identity --profile
+mlops-p2` y `aws s3 ls s3://proyecto2-dataset-quality-gate-prod --profile
+mlops-p2` confirmaron la identidad y el acceso (bucket vacío, como se
+esperaba). `dvc remote modify --local prod profile mlops-p2` +
+`dvc status -r prod` confirmaron que DVC ve el remote correctamente.
+
+**Pendiente antes de cerrar el ticket:** todavía no se ha corrido un `dvc
+push -r prod` real — se decidió a propósito no subir ni siquiera el
+dataset de muestra hasta tener el primer lote real fusionado, para no
+ensuciar el bucket compartido con datos sintéticos. El primer `dvc push
+-r prod` real queda documentado como parte del cierre de T-3.2b (fusión de
+lotes), no de este ticket.
