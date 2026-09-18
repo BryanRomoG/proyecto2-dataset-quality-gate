@@ -1,0 +1,11 @@
+# Igual que .gitignore, pero para lo que DVC hashea como dependencia de
+# etapa. Sin esto, __pycache__ generado al correr una etapa se cuela en el
+# hash del directorio fuente en la siguiente corrida, y dvc repro deja de
+# ser idempotente (rehace la etapa aunque nada relevante haya cambiado).
+__pycache__
+*.pyc
+.venv
+.pytest_cache
+.ruff_cache
+*.egg-info
+node_modules
