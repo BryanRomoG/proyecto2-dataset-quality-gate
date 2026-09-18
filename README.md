@@ -43,14 +43,18 @@ Verificado end-to-end: `npm install`, `npm run typecheck`, `npm run check`, `npm
 ### Clonar
 
 ```bash
-git clone https://github.com/Andy-752109/Proyecto01_IDC.git
-cd Proyecto01_IDC
+git clone https://github.com/BryanRomoG/proyecto2-dataset-quality-gate.git
+cd proyecto2-dataset-quality-gate
 ```
 
 ### Setup inicial
 
 ```bash
 cp .env.example .env
+npm install
+```
+```windows cmd
+copy .env.example .env
 npm install
 ```
 
@@ -71,7 +75,7 @@ Para parar: `Ctrl+C` en la terminal de `npm run dev`, y `docker compose down`.
 
 ### Producción / monolito completo (puerto 3100)
 
-```bash
+```bash/Windows cmd
 docker compose up --build
 ```
 
