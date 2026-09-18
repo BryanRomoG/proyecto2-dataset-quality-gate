@@ -3,7 +3,7 @@ import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { annotations, categories, images } from './schema';
 import { seed } from './seed';
-import { ensureTestDatabaseExists, testDb as db, testPool as pool } from './test-client';
+import { testDb as db, ensureTestDatabaseExists, testPool as pool } from './test-client';
 
 // Cuántas filas "de muestra" puede haber sin que sea trabajo real: los 3
 // seed-assets. Por encima de eso, casi seguro es anotación real de alguien
@@ -33,11 +33,7 @@ async function dropAllTables(): Promise<void> {
   const count = await currentImageCount();
   if (count > MAX_SAFE_ROWS_BEFORE_DROP) {
     throw new Error(
-      `db.test.ts iba a borrar la tabla 'images', que tiene ${count} filas — ` +
-        `mucho más que los 3 de muestra esperados. Esto parece trabajo real de ` +
-        'anotación, no una base de datos de prueba vacía. Corre este test solo ' +
-        'contra una MariaDB descartable (como en CI), nunca contra tu base de ' +
-        'desarrollo local con anotaciones reales.',
+      `db.test.ts iba a borrar la tabla 'images', que tiene ${count} filas — mucho más que los 3 de muestra esperados. Esto parece trabajo real de anotación, no una base de datos de prueba vacía. Corre este test solo contra una MariaDB descartable (como en CI), nunca contra tu base de desarrollo local con anotaciones reales.`,
     );
   }
 
