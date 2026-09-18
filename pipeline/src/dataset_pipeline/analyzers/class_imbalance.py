@@ -34,9 +34,7 @@ def analyze_class_imbalance(
     ratio = (majority / minority) if minority > 0 else float("inf")
 
     below_minimum = sorted(
-        name
-        for name, count in image_counts_per_class.items()
-        if count < min_images_per_class
+        name for name, count in image_counts_per_class.items() if count < min_images_per_class
     )
 
     return ClassImbalanceReport(
