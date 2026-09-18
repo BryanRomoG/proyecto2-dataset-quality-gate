@@ -14,17 +14,46 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 
+from dataset_pipeline.analyzers import analyze_class_imbalance, analyze_invalid_boxes
 from dataset_pipeline.coco.loader import load_coco_dataset
 from dataset_pipeline.coco.models import CocoDataset
+from dataset_pipeline.coco.stats import images_per_category
 from dataset_pipeline.config import QualityPolicy, load_quality_policy
 from dataset_pipeline.quality_gate.evaluator import QualityReport, evaluate
 from dataset_pipeline.quality_gate.metrics import min_images_per_class
 
-# Cada check de quality.yaml necesita un cómputo registrado aquí. Un check
-# sin analizador todavía (ej. algo del Frente 3 que no ha aterrizado) hace
-# que evaluate() truene con UnknownCheckError en vez de pasar en silencio.
+
+def _invalid_boxes_count(dataset: CocoDataset) -> float:
+    return float(len(analyze_invalid_boxes(dataset).invalid))
+
+
+def _min_images_per_class_offenders(dataset: CocoDataset, threshold: float) -> list[str]:
+    # Reusa el analizador de desbalance de clases (T-2.2, Ale) para nombrar
+    # las clases concretas que quedaron por debajo del umbral, en vez de
+    # solo reportar "el mínimo fue X" sin decir a qué clase pertenece.
+    counts = images_per_category(dataset)
+    report = analyze_class_imbalance(counts, min_images_per_class=int(threshold))
+    return report.classes_below_minimum
+
+
+def _invalid_boxes_offenders(dataset: CocoDataset, _threshold: float) -> list[str]:
+    return [str(box.annotation_id) for box in analyze_invalid_boxes(dataset).invalid]
+
+
+# Cada check de quality.yaml necesita un cómputo de VALOR registrado aquí.
+# Un check sin analizador todavía (ej. algo del Frente 3 que no ha
+# aterrizado) hace que evaluate() truene con UnknownCheckError en vez de
+# pasar en silencio.
 _METRIC_COMPUTERS: dict[str, Callable[[CocoDataset], float]] = {
     "min_images_per_class": min_images_per_class,
+    "invalid_boxes_count": _invalid_boxes_count,
+}
+
+# Y, opcionalmente, un cómputo de MUESTRAS OFENSORAS (SPEC-F4-04) — un check
+# sin entrada aquí simplemente reporta lista vacía, no es un error.
+_OFFENDER_COMPUTERS: dict[str, Callable[[CocoDataset, float], list[str]]] = {
+    "min_images_per_class": _min_images_per_class_offenders,
+    "invalid_boxes_count": _invalid_boxes_offenders,
 }
 
 
@@ -37,11 +66,21 @@ def _compute_metric_values(dataset: CocoDataset, policy: QualityPolicy) -> dict[
     return values
 
 
+def _compute_offending_samples(dataset: CocoDataset, policy: QualityPolicy) -> dict[str, list[str]]:
+    samples: dict[str, list[str]] = {}
+    for name, check in policy.checks.items():
+        computer = _OFFENDER_COMPUTERS.get(name)
+        if computer is not None:
+            samples[name] = computer(dataset, check.threshold)
+    return samples
+
+
 def run(coco_path: str | Path, policy_path: str | Path) -> QualityReport:
     dataset = load_coco_dataset(coco_path)
     policy = load_quality_policy(policy_path)
     metric_values = _compute_metric_values(dataset, policy)
-    return evaluate(metric_values, policy)
+    offending_samples = _compute_offending_samples(dataset, policy)
+    return evaluate(metric_values, policy, offending_samples=offending_samples)
 
 
 def _report_to_json(report: QualityReport) -> dict:
@@ -55,6 +94,7 @@ def _report_to_json(report: QualityReport) -> dict:
                 "direction": check.direction,
                 "severity": check.severity,
                 "passed": check.passed,
+                "offending_samples": check.offending_samples,
             }
             for check in report.checks
         ],

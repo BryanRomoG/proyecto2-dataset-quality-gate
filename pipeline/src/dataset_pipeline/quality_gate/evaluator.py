@@ -21,6 +21,7 @@ Direction = Literal["gte", "lte"]
 # más bajo es mejor (ej. proporción de objetos pequeños, de duplicados).
 _CHECK_DIRECTIONS: dict[str, Direction] = {
     "min_images_per_class": "gte",
+    "invalid_boxes_count": "lte",
 }
 
 
@@ -44,6 +45,11 @@ class CheckResult:
     direction: Direction
     severity: Literal["warn", "fail"]
     passed: bool
+    # SPEC-F4-04: el reporte no es solo un booleano — trae valor vs umbral
+    # (arriba) y, cuando el analizador correspondiente las provee, las
+    # muestras concretas que ofenden el check (nombres de clase, IDs de
+    # anotación, etc.). Lista vacía si nadie las proveyó, nunca None.
+    offending_samples: list[str]
 
 
 @dataclass(frozen=True)
@@ -58,7 +64,12 @@ def _compare(value: float, threshold: float, direction: Direction) -> bool:
     return value <= threshold
 
 
-def evaluate(metric_values: dict[str, float], policy: QualityPolicy) -> QualityReport:
+def evaluate(
+    metric_values: dict[str, float],
+    policy: QualityPolicy,
+    offending_samples: dict[str, list[str]] | None = None,
+) -> QualityReport:
+    offending_samples = offending_samples or {}
     results: list[CheckResult] = []
 
     for name, check in policy.checks.items():
@@ -84,6 +95,7 @@ def evaluate(metric_values: dict[str, float], policy: QualityPolicy) -> QualityR
                 direction=direction,
                 severity=check.severity,
                 passed=passed,
+                offending_samples=offending_samples.get(name, []),
             )
         )
 
