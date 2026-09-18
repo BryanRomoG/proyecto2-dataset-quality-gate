@@ -235,7 +235,7 @@ export function AnnotationWorkspace() {
     );
   }
 
-  const { image, hasNext, hasPrevious, hasNextPending } = currentImage;
+  const { image, hasNext, hasPrevious } = currentImage;
 
   return (
     <div className="annotation-workspace">
@@ -252,7 +252,7 @@ export function AnnotationWorkspace() {
             type="button"
             className="annotation-workspace__save-next"
             onClick={handleSaveAndNext}
-            disabled={(draft !== null && pendingCategoryId === null) || !hasNextPending || isSaving}
+            disabled={(draft !== null && pendingCategoryId === null) || isSaving}
           >
             {isSaving ? 'Guardando…' : 'Guardar y siguiente'}
           </button>
