@@ -1,9 +1,9 @@
 """Frente 4 — cálculo de métricas sobre un CocoDataset ya validado (Frente 2).
 
 `min_images_per_class` es el número que la compuerta compara contra M3 (300
-imágenes por clase): imágenes *distintas* que contienen al menos una caja de
-esa clase, no cajas. Una imagen con siete anotaciones de "car" cuenta una
-vez para "car", no siete.
+imágenes por clase). El conteo "imágenes distintas, no cajas" en sí ya está
+probado en pipeline/tests/coco/test_stats.py (Ale, T-2.2) — aquí solo se
+prueba que min_images_per_class tome el mínimo correcto sobre ese conteo.
 """
 
 from dataset_pipeline.coco.models import (
@@ -13,7 +13,7 @@ from dataset_pipeline.coco.models import (
     CocoImage,
     CocoInfo,
 )
-from dataset_pipeline.quality_gate.metrics import images_per_class, min_images_per_class
+from dataset_pipeline.quality_gate.metrics import min_images_per_class
 
 INFO = CocoInfo(description="test", version="1.0", date_created="2026-09-15T00:00:00.000Z")
 
@@ -32,43 +32,6 @@ def _annotation(ann_id: int, image_id: int, category_id: int) -> CocoAnnotation:
         iscrowd=0,
         segmentation=[],
     )
-
-
-def test_cuenta_imagenes_distintas_no_cajas():
-    # Imagen 1 tiene DOS cajas de "car" (category_id=1) — debe contar una
-    # sola vez, no dos.
-    dataset = CocoDataset(
-        info=INFO,
-        licenses=[],
-        images=[_image(1), _image(2)],
-        annotations=[
-            _annotation(1, image_id=1, category_id=1),
-            _annotation(2, image_id=1, category_id=1),
-            _annotation(3, image_id=2, category_id=1),
-        ],
-        categories=[CocoCategory(id=1, name="car", supercategory="none")],
-    )
-
-    counts = images_per_class(dataset)
-
-    assert counts == {"car": 2}
-
-
-def test_categoria_sin_ninguna_anotacion_cuenta_cero_no_desaparece():
-    dataset = CocoDataset(
-        info=INFO,
-        licenses=[],
-        images=[_image(1)],
-        annotations=[_annotation(1, image_id=1, category_id=1)],
-        categories=[
-            CocoCategory(id=1, name="car", supercategory="none"),
-            CocoCategory(id=2, name="person", supercategory="none"),
-        ],
-    )
-
-    counts = images_per_class(dataset)
-
-    assert counts == {"car": 1, "person": 0}
 
 
 def test_min_images_per_class_es_la_clase_con_menos_imagenes():
