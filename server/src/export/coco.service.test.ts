@@ -9,14 +9,12 @@ const fixture: CocoSourceData = {
   images: [
     {
       id: 10,
-      filename: 'street-01.jpg',
       storageKey: 'images/0a1b2c3d-1111-4222-8333-444455556666-street-01.jpg',
       width: 1280,
       height: 720,
     },
     {
       id: 11,
-      filename: 'park-01.jpg',
       storageKey: 'images/9f8e7d6c-aaaa-4bbb-8ccc-ddddeeeeffff-park-01.jpg',
       width: 1024,
       height: 768,
@@ -101,15 +99,42 @@ describe('buildCocoDataset', () => {
   // ("images/<uuid>-nombre.jpg"). Los modelos Pydantic del pipeline
   // (CocoImage.file_name) rechazan cualquier ruta, así que ningún export real
   // del portal se podía validar sin normalizarlo a mano.
-  it('exporta file_name como el nombre original, sin carpeta ni UUID de almacenamiento', () => {
+  it('exporta file_name como el storageKey sin la carpeta (conserva el UUID)', () => {
     const dataset = buildCocoDataset(fixture);
 
     expect(dataset.images.map((image) => image.file_name)).toEqual([
-      'street-01.jpg',
-      'park-01.jpg',
+      '0a1b2c3d-1111-4222-8333-444455556666-street-01.jpg',
+      '9f8e7d6c-aaaa-4bbb-8ccc-ddddeeeeffff-park-01.jpg',
     ]);
     for (const image of dataset.images) {
-      expect(image.file_name).not.toMatch(/[\\/]|\.\./);
+      expect(image.file_name).not.toMatch(/[\/\\]|\.\./);
     }
+  });
+
+  // El nombre original NO es único: dos personas pueden subir "image.jpg".
+  // El UUID del storageKey es lo que los distingue, y además es el nombre
+  // con el que el archivo queda en MinIO (lo que DVC baja al disco).
+  it('no colisiona cuando dos imágenes distintas tienen el mismo nombre original', () => {
+    const dataset = buildCocoDataset({
+      categories: [{ id: 1, name: 'car' }],
+      images: [
+        {
+          id: 1,
+          storageKey: 'images/aaaaaaaa-0000-4000-8000-000000000001-image.jpg',
+          width: 10,
+          height: 10,
+        },
+        {
+          id: 2,
+          storageKey: 'images/bbbbbbbb-0000-4000-8000-000000000002-image.jpg',
+          width: 10,
+          height: 10,
+        },
+      ],
+      annotations: [],
+    });
+
+    const names = dataset.images.map((image) => image.file_name);
+    expect(new Set(names).size).toBe(2);
   });
 });

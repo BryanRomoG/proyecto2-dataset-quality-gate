@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { db } from '../db/client';
 import { annotations, categories, images } from '../db/schema';
 import {
@@ -15,8 +16,6 @@ export interface CategoryRow {
 
 export interface ImageRow {
   id: number;
-  filename: string;
-  // Se recibe pero NO se exporta como file_name (ver buildCocoDataset).
   storageKey: string;
   width: number;
   height: number;
@@ -50,10 +49,12 @@ export function buildCocoDataset(source: CocoSourceData): CocoDataset {
 
   const cocoImages: CocoImage[] = source.images.map((image) => ({
     id: image.id,
-    // Nombre original del archivo, NO el storageKey ("images/<uuid>-nombre.jpg"):
-    // el pipeline (CocoImage.file_name) rechaza cualquier ruta, y el UUID solo
-    // existe para no colisionar dentro del bucket de MinIO.
-    file_name: image.filename,
+    // storageKey SIN la carpeta ("images/<uuid>-nombre.jpg" -> "<uuid>-nombre.jpg"):
+    // el pipeline (CocoImage.file_name) rechaza cualquier ruta, pero el UUID se
+    // conserva a propósito. El nombre original no es único (dos personas pueden
+    // subir "image.jpg") y el UUID es también el nombre con el que el archivo
+    // queda en MinIO, o sea el que DVC baja al disco y el que luego se busca.
+    file_name: posix.basename(image.storageKey),
     width: image.width,
     height: image.height,
   }));

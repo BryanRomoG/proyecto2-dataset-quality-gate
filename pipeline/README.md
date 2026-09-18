@@ -273,6 +273,11 @@ local — `docker compose up -d` + `npm run dev`, ver README raíz):
    `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY`) y descarga el contenido del
    bucket (`MINIO_BUCKET`, default `annotation-images`). Alternativa con
    el cliente `mc`: `mc mirror local/annotation-images ./mi-lote/`.
+   El `file_name` de cada imagen en el JSON es el nombre del objeto en
+   MinIO sin la carpeta (`<uuid>-nombre.jpg`), así que copia el
+   contenido de la carpeta `images/` que baja (los archivos, no la
+   carpeta) directo a `data/raw/images/`: los nombres ya coinciden y el
+   UUID evita choques si dos personas subieron un `image.jpg`.
 4. Comparte el `.json` + la carpeta de imágenes con quien vaya a fusionar
    los lotes (Drive, zip, USB — logística de equipo, no de la app).
 
