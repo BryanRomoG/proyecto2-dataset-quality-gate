@@ -117,5 +117,5 @@ La UI nunca accede a MariaDB ni a MinIO directamente: todo pasa por `/api/*` en 
 
 ## Pendiente (fuera del alcance de la rúbrica)
 
-- CI (lint + typecheck + tests en cada push/PR).
+- Añadir typecheck al CI (lint + tests de Python ya corren en `pipeline-ci.yml`; el portal tiene `ci.yml`).
 - Decidir si se agrega autenticación (no está en la rúbrica como requisito explícito).

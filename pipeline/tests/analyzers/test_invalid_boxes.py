@@ -121,3 +121,25 @@ def test_zero_height_is_detected() -> None:
 
     assert len(report.invalid) == 1
     assert report.invalid[0].reasons == ["zero_height"]
+
+
+def test_width_just_below_zero_is_negative() -> None:
+    # Frontera: -1 ya es negativo (una mutación `< -1` lo dejaba pasar).
+    report = analyze_invalid_boxes(_dataset([_box([10, 10, -1, 40], area=-40)]))
+
+    assert len(report.invalid) == 1
+    assert report.invalid[0].reasons == ["negative_width"]
+
+
+def test_height_just_below_zero_is_negative() -> None:
+    report = analyze_invalid_boxes(_dataset([_box([10, 10, 40, -1], area=-40)]))
+
+    assert len(report.invalid) == 1
+    assert report.invalid[0].reasons == ["negative_height"]
+
+
+def test_smallest_positive_box_is_valid() -> None:
+    # Frontera del otro lado: 1x1 no es degenerada.
+    report = analyze_invalid_boxes(_dataset([_box([10, 10, 1, 1], area=1)]))
+
+    assert report.invalid == []
