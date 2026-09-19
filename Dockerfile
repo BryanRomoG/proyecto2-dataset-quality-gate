@@ -15,6 +15,9 @@ RUN npm ci --omit=dev
 COPY --from=build /app/client/dist ./client/dist
 COPY server ./server
 COPY drizzle ./drizzle
+# Los contratos congelados (T-101) los sirve /api/contracts/* en runtime,
+# así que tienen que viajar dentro de la imagen, no solo en el repo.
+COPY contracts ./contracts
 COPY tsconfig*.json ./
 
 EXPOSE 3100

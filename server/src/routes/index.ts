@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { cocoExportRouter } from '../export/coco.router';
 import { annotationsRouter } from './annotations';
 import { categoriesRouter } from './categories';
+import { contractsRouter } from './contracts';
 import { dashboardRouter } from './dashboard';
 import { imagesRouter } from './images';
 
@@ -16,6 +17,7 @@ apiRouter.use('/categories', categoriesRouter);
 apiRouter.use('/export', cocoExportRouter);
 apiRouter.use('/images', imagesRouter);
 apiRouter.use('/dashboard', dashboardRouter);
+apiRouter.use('/contracts', contractsRouter);
 
 // El resto de routers de features (dashboard, ...) se montan aquí de la
 // misma forma.

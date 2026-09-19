@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import './App.css';
 import { AnnotationWorkspace } from './features/annotations/AnnotationWorkspace';
+import { ContractsView } from './features/contracts/ContractsView';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { ExportCocoButton } from './features/export/ExportCocoButton';
 import { ImageUploadPanel } from './features/images/ImageUploadPanel';
 import { ImageSearch } from './features/search/ImageSearch';
-type View = 'images' | 'annotate' | 'dashboard' | 'search' | 'coco';
+type View = 'images' | 'annotate' | 'dashboard' | 'search' | 'coco' | 'contracts';
 
 export function App() {
   const [view, setView] = useState<View>('images');
@@ -29,6 +30,9 @@ export function App() {
         <button type="button" onClick={() => setView('coco')} disabled={view === 'coco'}>
           COCO
         </button>
+        <button type="button" onClick={() => setView('contracts')} disabled={view === 'contracts'}>
+          Contratos
+        </button>
       </nav>
       {view === 'images' && (
         <div className="app-light-island">
@@ -43,6 +47,7 @@ export function App() {
           <ExportCocoButton />
         </div>
       )}
+      {view === 'contracts' && <ContractsView />}
     </main>
   );
 }
