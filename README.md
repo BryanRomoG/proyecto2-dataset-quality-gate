@@ -28,6 +28,7 @@ dashboard de métricas, búsqueda con filtros y exportación a formato COCO.
 - **Portal de anotación**: subida de imágenes con validación de tipo/tamaño y feedback; editor de bounding boxes (Konva) con crear/mover/redimensionar/borrar y persistencia al recargar; categorías con color y validación de clase obligatoria; zoom, deshacer, navegación entre imágenes y "guardar y siguiente".
 - **Dashboard**: métricas calculadas desde la BD (nunca hardcodeadas) y gráficas por categoría/progreso (Recharts).
 - **Búsqueda**: operadores tipo `car AND person` resueltos en SQL (no en memoria), filtros combinables por clase/estado/rango de fechas, con paginación correcta.
+- **Contratos del dataset (T-104)**: sexta pantalla ("Contratos") que renderiza completos los tres contratos congelados en T-101 — `quality.json` (compuerta: valor vs umbral, dirección, severidad y muestras ofensoras por check), `splits.json` (seed, ratios, counts y la asignación imagen → split) y `versions.json` (versión actual e historial de releases con su diff: imágenes/cajas agregadas y eliminadas, imágenes por clase y clases bajo el mínimo). Se sirven tal cual desde `GET /api/contracts/{quality,splits,versions}` y se validan con Zod en el cliente; todavía **no** son datos reales del pipeline (eso es T-204).
 - **Exportación COCO**: JSON válido con `images`/`annotations`/`categories`, ids consistentes, `bbox` en píxeles absolutos, `area` coherente, `iscrowd` presente, descarga completa del dataset desde la UI.
 - **Vitest** (unit/integración) y **Cucumber.js** (Gherkin, con trazabilidad SPEC → `.feature` → step definitions) cubriendo las reglas críticas de negocio, incluidas anotación y exportación COCO.
 
@@ -104,6 +105,7 @@ server/src/
   routes/           Routers de la API (/api/*)
   lib/minio.ts       Cliente MinIO
   db/               Esquema Drizzle, migraciones, seeder (ver server/src/db/README.md)
+contracts/examples/ Contratos congelados (T-101) que consume la pantalla "Contratos"
 features/           SPECs en Gherkin + step definitions (ver features/README.md)
 ```
 
