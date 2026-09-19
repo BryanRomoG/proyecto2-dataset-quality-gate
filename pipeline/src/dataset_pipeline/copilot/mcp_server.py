@@ -12,19 +12,21 @@ duplicar lo que ya cubre `test_tools_read_only.py`.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
+from dataset_pipeline.copilot.settings import CopilotSettings
 from dataset_pipeline.copilot.tools import CopilotToolkit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_DATA_DIR = REPO_ROOT / "contracts" / "examples"
 
 
 def build_server(data_dir: Path | str | None = None) -> MCPServer:
-    toolkit = CopilotToolkit(data_dir or os.environ.get("COPILOT_DATA_DIR", DEFAULT_DATA_DIR))
+    # Un valor relativo (el default de settings) se resuelve contra la raíz del
+    # repo, no contra el cwd, para que el servidor funcione lanzado desde cualquier lado.
+    configured = Path(data_dir or CopilotSettings().copilot_data_dir)
+    toolkit = CopilotToolkit(configured if configured.is_absolute() else REPO_ROOT / configured)
 
     server = MCPServer("dataset-copilot")
     server.tool()(toolkit.get_quality_report)
