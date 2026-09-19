@@ -1,0 +1,103 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform.yml'
+
+# Requerido por OIDC: sin esto GitHub no emite el token de identidad que
+# aws-actions/configure-aws-credentials necesita para pedir credenciales
+# temporales via sts:AssumeRoleWithWebIdentity.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  # >= 1.10 obligatorio: el backend S3 solo acepta "use_lockfile" (locking
+  # nativo, sin DynamoDB) a partir de esa versión. Con 1.9.x el init falla
+  # con "Invalid backend configuration argument".
+  TF_VERSION: "1.10.5"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # "upstream" = states de otras capas que esta necesita leer con
+        # terraform_remote_state. network no depende de nadie.
+        include:
+          - layer: network
+            upstream: ""
+          - layer: data
+            upstream: "network/terraform.tfstate"
+          - layer: storage
+            upstream: "network/terraform.tfstate"
+          - layer: compute
+            upstream: "network/terraform.tfstate data/terraform.tfstate"
+    defaults:
+      run:
+        working-directory: infra/${{ matrix.layer }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Cero llaves estáticas: se autentica con el rol IAM de solo lectura
+      # creado en infra/cicd/ vía OIDC, nunca con AWS_ACCESS_KEY_ID/SECRET.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform fmt (todo infra/)
+        if: matrix.layer == 'network'
+        working-directory: infra
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="use_lockfile=true"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # terraform_remote_state falla duro si el state de la capa de la que se
+      # depende todavía no existe (nadie ha corrido el apply de network/data).
+      # Mientras tanto el PR igual queda cubierto por fmt/init/validate, y este
+      # chequeo deja de saltar solo en cuanto esas capas se apliquen.
+      - name: Check upstream remote state
+        id: upstream
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          UPSTREAM: ${{ matrix.upstream }}
+        run: |
+          missing=""
+          for key in $UPSTREAM; do
+            if ! aws s3api head-object --bucket "$TF_STATE_BUCKET" --key "$key" >/dev/null 2>&1; then
+              missing="$missing $key"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Se omite el plan de ${{ matrix.layer }}: falta el remote state de$missing en s3://$TF_STATE_BUCKET. Aplica esas capas a mano (ver infra/README.md)."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Terraform plan
+        if: steps.upstream.outputs.ready == 'true'
+        env:
+          TF_VAR_network_state_bucket: ${{ vars.TF_STATE_BUCKET }}
+        run: terraform plan -input=false -lock-timeout=60s

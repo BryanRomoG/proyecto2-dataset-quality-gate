@@ -1,0 +1,13 @@
+# Nunca commitear: contienen el nombre real del bucket de state / lock.
+**/backend.hcl
+
+# Cache de providers y de módulos (el lock file SÍ se trackea, ver abajo).
+**/.terraform/
+
+# State local (solo debería existir en bootstrap/, y ni ahí se commitea).
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Archivos de plan guardados localmente.
+*.tfplan
