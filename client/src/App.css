@@ -39,6 +39,7 @@ main {
 
 .app-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 8px;
   background: #16181c;

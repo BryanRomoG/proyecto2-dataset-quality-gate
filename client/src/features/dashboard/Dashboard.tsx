@@ -6,7 +6,9 @@ import {
   fetchDashboardSummary,
   fetchObjectsByCategory,
 } from '../../api/dashboard';
+import { fetchGate } from '../../api/pipeline';
 import { fetchQualityMetrics } from '../../api/telemetry';
+import { GateStatus } from '../pipeline/GateStatus';
 import { PipelineTelemetry } from './PipelineTelemetry';
 import './dashboard.css';
 import { DEFAULT_REFRESH_MS, useLiveData } from './useLiveData';
@@ -33,10 +35,14 @@ export function Dashboard() {
   // materializada, la otra se sigue mostrando.
   const database = useLiveData(fetchDatabaseMetrics);
   const telemetry = useLiveData(fetchQualityMetrics);
+  // Tercera fuente: la compuerta de calidad (quality.yaml evaluado contra la
+  // telemetría). Si no se puede evaluar, el resto del Overview sigue igual.
+  const gate = useLiveData(fetchGate);
 
   function refreshAll() {
     void database.refresh();
     void telemetry.refresh();
+    void gate.refresh();
   }
 
   if (database.state.status === 'loading') {
@@ -86,6 +92,8 @@ export function Dashboard() {
         </output>
       )}
 
+      <GateStatus state={gate.state} />
+
       <div className="dashboard__metrics">
         <div className="dashboard__metric" style={{ '--metric-color': '#3fa9f5' } as CSSProperties}>
           <span className="dashboard__metric-label">Total de imágenes</span>
@@ -111,6 +119,21 @@ export function Dashboard() {
             {summary.totalCategories}
           </span>
         </div>
+        {gate.state.status === 'ready' && gate.state.data.available && (
+          <div
+            className="dashboard__metric"
+            style={
+              {
+                '--metric-color': gate.state.data.data.failedChecks > 0 ? '#e5484d' : '#2dd4a7',
+              } as CSSProperties
+            }
+          >
+            <span className="dashboard__metric-label">Checks fallidos</span>
+            <span className="dashboard__metric-value" data-testid="metric-failed-checks">
+              {gate.state.data.data.failedChecks}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="dashboard__panel">

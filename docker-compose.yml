@@ -29,6 +29,12 @@ services:
       # carpeta está vacía, el dashboard lo dice en pantalla en vez de
       # inventar métricas.
       - ./data/processed:/app/data/processed:ro
+      # Imágenes del dataset (DVC) para las miniaturas de Analyzers y el
+      # hover de Explorar. Solo lectura, igual que los artefactos.
+      - ./data/raw/images:/app/data/raw/images:ro
+      # La pantalla Settings edita la política de la compuerta: este es el
+      # único montaje con escritura, y es un solo archivo, no la carpeta.
+      - ./quality.yaml:/app/quality.yaml
     depends_on:
       mariadb:
         condition: service_healthy

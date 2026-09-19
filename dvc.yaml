@@ -58,3 +58,22 @@ stages:
       - splits.yaml
     outs:
       - data/processed/splits.json
+
+  # Analítica exploratoria (sección 7.6 de la app): proyección PCA 2D de las
+  # imágenes, precomputada aquí para que el navegador solo la lea. Depende de
+  # `split` (colorea la nube por split) pero nada depende de ella.
+  embed:
+    cmd: >-
+      python pipeline/scripts/embed.py
+      --coco data/processed/coco.validated.json
+      --images-dir data/raw/images
+      --splits data/processed/splits.json
+      --out data/processed/embedding.json
+    deps:
+      - data/processed/coco.validated.json
+      - data/processed/splits.json
+      - data/raw/images
+      - pipeline/src/dataset_pipeline/coco/embedding.py
+      - pipeline/scripts/embed.py
+    outs:
+      - data/processed/embedding.json
