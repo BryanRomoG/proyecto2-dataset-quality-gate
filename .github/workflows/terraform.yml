@@ -26,7 +26,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        layer: [network, data, storage, compute]
+        # "upstream" = states de otras capas que esta necesita leer con
+        # terraform_remote_state. network no depende de nadie.
+        include:
+          - layer: network
+            upstream: ""
+          - layer: data
+            upstream: "network/terraform.tfstate"
+          - layer: storage
+            upstream: "network/terraform.tfstate"
+          - layer: compute
+            upstream: "network/terraform.tfstate data/terraform.tfstate"
     defaults:
       run:
         working-directory: infra/${{ matrix.layer }}
@@ -39,27 +49,6 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-
-      # TEMPORAL — debug del error "Not authorized to perform
-      # sts:AssumeRoleWithWebIdentity": la trust policy en AWS ya se
-      # verificó correcta a mano, así que hay que ver el token real que
-      # emite GitHub para este run. Solo imprime claims públicos (aud,
-      # sub, repository, ref, event_name), nunca el JWT firmado completo.
-      # Quitar este paso en cuanto se resuelva.
-      - name: Debug OIDC token claims
-        if: matrix.layer == 'network'
-        run: |
-          python3 - <<'EOF'
-          import json, base64, urllib.request, os
-          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com"
-          req = urllib.request.Request(url, headers={"Authorization": "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
-          tok = json.load(urllib.request.urlopen(req))["value"]
-          payload = tok.split(".")[1]
-          payload += "=" * (-len(payload) % 4)
-          claims = json.loads(base64.urlsafe_b64decode(payload))
-          keys = ["aud", "sub", "repository", "repository_owner", "ref", "event_name", "job_workflow_ref"]
-          print(json.dumps({k: claims.get(k) for k in keys}, indent=2))
-          EOF
 
       # Cero llaves estáticas: se autentica con el rol IAM de solo lectura
       # creado en infra/cicd/ vía OIDC, nunca con AWS_ACCESS_KEY_ID/SECRET.
@@ -84,7 +73,31 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      # terraform_remote_state falla duro si el state de la capa de la que se
+      # depende todavía no existe (nadie ha corrido el apply de network/data).
+      # Mientras tanto el PR igual queda cubierto por fmt/init/validate, y este
+      # chequeo deja de saltar solo en cuanto esas capas se apliquen.
+      - name: Check upstream remote state
+        id: upstream
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          UPSTREAM: ${{ matrix.upstream }}
+        run: |
+          missing=""
+          for key in $UPSTREAM; do
+            if ! aws s3api head-object --bucket "$TF_STATE_BUCKET" --key "$key" >/dev/null 2>&1; then
+              missing="$missing $key"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Se omite el plan de ${{ matrix.layer }}: falta el remote state de$missing en s3://$TF_STATE_BUCKET. Aplica esas capas a mano (ver infra/README.md)."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Terraform plan
+        if: steps.upstream.outputs.ready == 'true'
         env:
           TF_VAR_network_state_bucket: ${{ vars.TF_STATE_BUCKET }}
         run: terraform plan -input=false -lock-timeout=60s

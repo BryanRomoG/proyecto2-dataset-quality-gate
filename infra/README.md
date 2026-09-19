@@ -127,9 +127,20 @@ El rol (`infra/cicd/main.tf`) queda restringido a:
 > **No edites esta trust policy a mano en la consola de AWS.** Terraform es el
 > dueño del recurso: el siguiente `apply` revierte el cambio y CI se rompe con
 > `Not authorized to perform sts:AssumeRoleWithWebIdentity`. Si el `sub` real
-> cambia, ajústalo en `infra/cicd/main.tf` y aplica. Para ver el `sub` que
-> emite GitHub, el workflow tiene un paso `Debug OIDC token claims` en el job
-> `plan (network)`.
+> cambia, ajústalo en `infra/cicd/main.tf` y aplica. Para ver el `sub` real que
+> emite GitHub, el commit `a51526d` tiene un paso `Debug OIDC token claims`
+> que se puede volver a agregar temporalmente al workflow.
+
+### Por qué el plan de `data`, `storage` y `compute` se salta
+
+Esas tres capas leen el state de `network` (y `compute` además el de `data`)
+con `terraform_remote_state`, que falla duro si ese objeto todavía no existe
+en el bucket. Mientras nadie haya corrido el `apply` de esas capas, el
+workflow salta el `terraform plan` de las que dependen de ellas y deja un
+warning en el run; `fmt`, `init` y `validate` sí corren siempre, así que el PR
+no queda sin revisión. El chequeo (`Check upstream remote state`) usa
+`aws s3api head-object` y se desactiva solo en cuanto el state existe: no hay
+que tocar el workflow después de aplicar.
 - Permisos: `ReadOnlyAccess` (managed policy de AWS) más lectura/lock del
   bucket de state — suficiente para `terraform plan`, insuficiente para
   crear, modificar o borrar nada. El `apply` real sigue siendo manual,
