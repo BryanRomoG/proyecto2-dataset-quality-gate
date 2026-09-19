@@ -7,3 +7,4 @@
     use_ssl = false
 ['remote "prod"']
     url = s3://proyecto2-dataset-quality-gate-prod/dvc
+    region = us-east-2
