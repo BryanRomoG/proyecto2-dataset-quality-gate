@@ -23,12 +23,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version-file: .python-version
           cache: 'pip'
-          cache-dependency-path: pipeline/pyproject.toml
+          cache-dependency-path: pipeline/requirements.lock
 
+      # Versiones exactas del lockfile (uv pip compile), no rangos abiertos.
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -r requirements.lock
+          pip install --no-deps -e .
 
       - name: Ruff lint
         run: ruff check .
@@ -38,3 +41,20 @@ jobs:
 
       - name: Tests (pytest, incluye BDD vía pytest-bdd)
         run: pytest -v
+
+      # El CI no tiene los datos de DVC, así que la compuerta se prueba sobre
+      # un COCO sintético: con un umbral alcanzable debe PASAR (exit 0) y con
+      # el quality.yaml real (300 por clase) debe BLOQUEAR (exit 1).
+      - name: Quality gate (pasa y bloquea)
+        run: |
+          python scripts/generate_sample_coco.py --out "$RUNNER_TEMP/s/coco.json" --images-dir "$RUNNER_TEMP/s/images"
+          {
+            echo 'checks:'
+            echo '  min_images_per_class:'
+            echo '    threshold: 10'
+            echo '    severity: fail'
+          } > "$RUNNER_TEMP/s/pass.yaml"
+          python -m dataset_pipeline.quality_gate.cli --coco "$RUNNER_TEMP/s/coco.json" --policy "$RUNNER_TEMP/s/pass.yaml" --output "$RUNNER_TEMP/s/pass.json"
+          if python -m dataset_pipeline.quality_gate.cli --coco "$RUNNER_TEMP/s/coco.json" --policy ../quality.yaml --output "$RUNNER_TEMP/s/fail.json"; then
+            echo "la compuerta debía bloquear con quality.yaml"; exit 1
+          fi

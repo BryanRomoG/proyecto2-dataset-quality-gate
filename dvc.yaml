@@ -27,6 +27,21 @@ stages:
     outs:
       - data/processed/quality_metrics.json
 
+  gate:
+    # Compuerta de calidad: exit 1 si algún check `severity: fail` no pasa, y
+    # entonces `dvc repro` se detiene aquí y no llega a `split`.
+    cmd: >-
+      python -m dataset_pipeline.quality_gate.cli
+      --coco data/processed/coco.validated.json
+      --policy quality.yaml
+      --output data/processed/quality.json
+    deps:
+      - data/processed/coco.validated.json
+      - pipeline/src/dataset_pipeline/quality_gate
+      - quality.yaml
+    outs:
+      - data/processed/quality.json
+
   split:
     cmd: >-
       python pipeline/scripts/split.py
@@ -37,6 +52,7 @@ stages:
     deps:
       - data/processed/coco.validated.json
       - data/processed/quality_metrics.json
+      - data/processed/quality.json
       - pipeline/src/dataset_pipeline/splits
       - pipeline/scripts/split.py
       - splits.yaml

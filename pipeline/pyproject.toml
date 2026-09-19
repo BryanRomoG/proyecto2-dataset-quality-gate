@@ -2,7 +2,7 @@
 name = "dataset-pipeline"
 version = "0.1.0"
 description = "Pipeline de calidad y versionado de datasets (Proyecto 2, MLOps)"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.7,<3",
     "pydantic-settings>=2.4,<3",

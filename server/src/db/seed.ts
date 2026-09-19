@@ -1,13 +1,9 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { sql } from 'drizzle-orm';
 import { IMAGES_BUCKET, ensureBucketExists, minioClient } from '../lib/minio';
 import { db, pool } from './client';
 import { categories, images } from './schema';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const seedAssetsDir = path.resolve(__dirname, 'seed-assets');
+import { seedImageBase64 } from './seed-images';
 
 const exampleCategories = [
   { name: 'car', color: '#e63946' },
@@ -16,9 +12,9 @@ const exampleCategories = [
   { name: 'bicycle', color: '#264653' },
 ] as const;
 
-// Los tres .jpg reales viven en server/src/db/seed-assets/. El tamaño en
-// bytes se calcula del archivo real (no se inventa), para que la fila de
-// la BD siempre sea coherente con el objeto que de verdad se sube a MinIO.
+// Los tres JPEG están incrustados en seed-images.ts. El tamaño en bytes se
+// calcula del buffer real (no se inventa), para que la fila de la BD siempre
+// sea coherente con el objeto que de verdad se sube a MinIO.
 const sampleFiles = [
   { filename: 'sample-street-01.jpg', width: 1280, height: 720 },
   { filename: 'sample-park-01.jpg', width: 1024, height: 768 },
@@ -27,7 +23,7 @@ const sampleFiles = [
 
 function buildExampleImages() {
   return sampleFiles.map((file) => {
-    const buffer = readFileSync(path.join(seedAssetsDir, file.filename));
+    const buffer = Buffer.from(seedImageBase64[file.filename], 'base64');
     return {
       filename: file.filename,
       storageKey: `seed/${file.filename}`,

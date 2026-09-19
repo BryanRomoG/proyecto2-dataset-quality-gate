@@ -4,6 +4,18 @@ Pipeline Python de calidad y versionado de datasets (Proyecto 2). Vive separado
 de `client/` y `server/` (el monolito Node del portal de anotación) y consume
 el COCO que ese portal exporta.
 
+## Entorno Python (3.12 + lockfile)
+
+El proyecto exige Python 3.12 (`requires-python = ">=3.12"`, `.python-version`) y el CI instala las
+versiones exactas de `pipeline/requirements.lock`:
+
+```bash
+uv venv --python 3.12 .venv            # o cualquier Python 3.12
+uv pip install -r pipeline/requirements.lock && uv pip install --no-deps -e pipeline
+# regenerar el lock tras cambiar dependencias:
+uv pip compile pipeline/pyproject.toml --extra dev --universal --python-version 3.12 -o pipeline/requirements.lock
+```
+
 ## Setup
 
 ```bash
@@ -216,11 +228,7 @@ prod` porque las versiones anteriores solo viven en S3. Ejemplo real,
 `v0.3.0 → v1.0.0`: +39 imágenes, +183 cajas, −16 cajas (las de `bicycle`
 descartadas con `drop_category.py`) y objetos pequeños de 3.47 % a 5.05 %.
 
-**Nota sobre `.jpg` en `git ls-files`:** existen 3 en
-`server/src/db/seed-assets/` — son fixtures de semilla de Proyecto 1
-(`npm run db:seed`), preexistentes desde el commit base, no parte del
-dataset de este proyecto. El chequeo de "datos fuera de Git" de T-3.2 se
-refiere a `data/` (donde sí está limpio), no a esos.
+**`.jpg` en `git ls-files`:** ninguno. Las 3 imágenes de semilla del portal (`npm run db:seed`) viven ahora incrustadas como base64 en `server/src/db/seed-images.ts`; los datos del proyecto solo están en DVC.
 
 Specs en `features/specs/f6-01-dvc-pipeline.feature`. El escenario de
 mismo hash DEV/PROD está marcado `@requiere_minio` y se salta solo si no
