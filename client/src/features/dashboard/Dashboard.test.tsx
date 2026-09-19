@@ -64,6 +64,36 @@ const qualityMetrics = {
   },
 };
 
+// Compuerta evaluada por el server: quality.yaml contra la telemetría del
+// pipeline. Un fail en rojo bloquea; un warn en rojo solo se reporta.
+const gate = {
+  passed: false,
+  failedChecks: 2,
+  warnings: 1,
+  checks: [
+    {
+      name: 'min_images_per_class',
+      value: 214,
+      threshold: 300,
+      direction: 'gte',
+      severity: 'fail',
+      passed: false,
+      evaluated: true,
+      offendingSamples: ['car', 'person'],
+    },
+    {
+      name: 'invalid_boxes_count',
+      value: 9,
+      threshold: 5,
+      direction: 'lte',
+      severity: 'warn',
+      passed: false,
+      evaluated: true,
+      offendingSamples: ['5', '9'],
+    },
+  ],
+};
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -82,6 +112,7 @@ function defaultHandlers(): Record<string, () => Response> {
     '/api/dashboard/summary': () => jsonResponse(summary),
     '/api/dashboard/objects-by-category': () => jsonResponse({ objectsByCategory }),
     '/api/dashboard/quality-metrics': () => jsonResponse(qualityMetrics),
+    '/api/pipeline/gate': () => jsonResponse(gate),
   };
 }
 
@@ -257,5 +288,47 @@ describe('Dashboard', () => {
     );
 
     hidden.mockRestore();
+  });
+
+  it('muestra el estado de la compuerta y cuántos checks fallan, calculados por el server', async () => {
+    render(<Dashboard />);
+
+    expect(await screen.findByTestId('gate-state')).toHaveTextContent('COMPUERTA: BLOQUEA');
+    expect(screen.getByTestId('metric-failed-checks')).toHaveTextContent('2');
+    expect(screen.getByTestId('gate-summary')).toHaveTextContent('1 warn, no bloquean');
+    expect(screen.getByTestId('gate-failing-min_images_per_class')).toHaveTextContent(
+      '214 (debe ser ≥ 300)',
+    );
+    expect(screen.getByTestId('gate-failing-min_images_per_class')).toHaveTextContent(
+      'car, person',
+    );
+  });
+
+  it('con la compuerta en verde muestra PASA y cero checks fallidos', async () => {
+    handlers['/api/pipeline/gate'] = () =>
+      jsonResponse({ passed: true, failedChecks: 0, warnings: 0, checks: [] });
+
+    render(<Dashboard />);
+
+    expect(await screen.findByTestId('gate-state')).toHaveTextContent('COMPUERTA: PASA');
+    expect(screen.getByTestId('metric-failed-checks')).toHaveTextContent('0');
+  });
+
+  it('si la compuerta no se puede evaluar, lo dice y el resto del Overview sigue', async () => {
+    handlers['/api/pipeline/gate'] = () =>
+      jsonResponse(
+        {
+          error: 'El artefacto todavía no está materializado.',
+          expectedPath: 'data/processed/quality_metrics.json',
+          hint: 'Corre `dvc pull`.',
+        },
+        503,
+      );
+
+    render(<Dashboard />);
+
+    expect(await screen.findByTestId('gate-unavailable')).toHaveTextContent('dvc pull');
+    expect(screen.getByTestId('metric-total-images')).toHaveTextContent('10');
+    expect(screen.queryByTestId('metric-failed-checks')).not.toBeInTheDocument();
   });
 });

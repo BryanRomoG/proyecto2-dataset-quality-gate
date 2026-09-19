@@ -5,8 +5,35 @@ import { ContractsView } from './features/contracts/ContractsView';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { ExportCocoButton } from './features/export/ExportCocoButton';
 import { ImageUploadPanel } from './features/images/ImageUploadPanel';
+import { AnalyzersView } from './features/pipeline/AnalyzersView';
+import { ExploreView } from './features/pipeline/ExploreView';
+import { SettingsView } from './features/pipeline/SettingsView';
+import { SplitsView } from './features/pipeline/SplitsView';
+import { VersionsView } from './features/pipeline/VersionsView';
 import { ImageSearch } from './features/search/ImageSearch';
-type View = 'images' | 'annotate' | 'dashboard' | 'search' | 'coco' | 'contracts';
+type View =
+  | 'images'
+  | 'annotate'
+  | 'dashboard'
+  | 'analyzers'
+  | 'splits'
+  | 'versions'
+  | 'settings'
+  | 'explore'
+  | 'search'
+  | 'coco'
+  | 'contracts';
+
+// Pantallas de la app de calidad de datasets (sección 7): el Overview es el
+// Dashboard de siempre; las demás leen los artefactos del pipeline.
+const PIPELINE_VIEWS: { id: View; label: string }[] = [
+  { id: 'dashboard', label: 'Overview' },
+  { id: 'analyzers', label: 'Analyzers' },
+  { id: 'splits', label: 'Splits' },
+  { id: 'versions', label: 'Versions' },
+  { id: 'settings', label: 'Settings' },
+  { id: 'explore', label: 'Explorar' },
+];
 
 export function App() {
   const [view, setView] = useState<View>('images');
@@ -21,9 +48,16 @@ export function App() {
         <button type="button" onClick={() => setView('annotate')} disabled={view === 'annotate'}>
           Anotar
         </button>
-        <button type="button" onClick={() => setView('dashboard')} disabled={view === 'dashboard'}>
-          Dashboard
-        </button>
+        {PIPELINE_VIEWS.map((item) => (
+          <button
+            type="button"
+            key={item.id}
+            onClick={() => setView(item.id)}
+            disabled={view === item.id}
+          >
+            {item.label}
+          </button>
+        ))}
         <button type="button" onClick={() => setView('search')} disabled={view === 'search'}>
           Buscar
         </button>
@@ -41,6 +75,11 @@ export function App() {
       )}
       {view === 'annotate' && <AnnotationWorkspace />}
       {view === 'dashboard' && <Dashboard />}
+      {view === 'analyzers' && <AnalyzersView />}
+      {view === 'splits' && <SplitsView />}
+      {view === 'versions' && <VersionsView />}
+      {view === 'settings' && <SettingsView />}
+      {view === 'explore' && <ExploreView />}
       {view === 'search' && <ImageSearch />}
       {view === 'coco' && (
         <div className="app-light-island">

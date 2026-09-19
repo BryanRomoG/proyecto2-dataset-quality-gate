@@ -17,6 +17,14 @@ const envSchema = z.object({
   // relativa a la raíz del repo si no es absoluta.
   PIPELINE_ARTIFACTS_DIR: z.string().min(1).default('data/processed'),
 
+  // Política de la compuerta (`quality.yaml`). La pantalla Settings la edita
+  // en disco, así que en Docker se monta con permiso de escritura.
+  QUALITY_POLICY_PATH: z.string().min(1).default('quality.yaml'),
+
+  // Imágenes crudas del dataset (DVC). Sirven para mostrar miniaturas de las
+  // muestras ofensoras y el hover de la analítica exploratoria.
+  RAW_IMAGES_DIR: z.string().min(1).default('data/raw/images'),
+
   MINIO_ENDPOINT: z.string().min(1),
   MINIO_PORT: z.coerce.number().int().positive(),
   MINIO_USE_SSL: z
