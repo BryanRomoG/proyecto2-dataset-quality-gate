@@ -4,6 +4,18 @@ Pipeline Python de calidad y versionado de datasets (Proyecto 2). Vive separado
 de `client/` y `server/` (el monolito Node del portal de anotación) y consume
 el COCO que ese portal exporta.
 
+## Entorno Python (3.12 + lockfile)
+
+El proyecto exige Python 3.12 (`requires-python = ">=3.12"`, `.python-version`) y el CI instala las
+versiones exactas de `pipeline/requirements.lock`:
+
+```bash
+uv venv --python 3.12 .venv            # o cualquier Python 3.12
+uv pip install -r pipeline/requirements.lock && uv pip install --no-deps -e pipeline
+# regenerar el lock tras cambiar dependencias:
+uv pip compile pipeline/pyproject.toml --extra dev --universal --python-version 3.12 -o pipeline/requirements.lock
+```
+
 ## Setup
 
 ```bash

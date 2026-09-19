@@ -27,9 +27,7 @@ import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Protocol, TypeVar
-
-_T = TypeVar("_T")
+from typing import Protocol
 
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 _DEFAULT_MAX_RETRIES = 3
@@ -69,13 +67,13 @@ def _is_retryable(exc: Exception) -> bool:
     return isinstance(exc, errors.APIError) and exc.code in _RETRYABLE_STATUS_CODES
 
 
-def _call_with_cooldown(
-    call: Callable[[], _T],
+def _call_with_cooldown[T](
+    call: Callable[[], T],
     *,
     max_retries: int,
     base_cooldown_seconds: float,
     sleep: Callable[[float], None],
-) -> _T:
+) -> T:
     attempt = 0
     while True:
         try:
