@@ -1,0 +1,5 @@
+outs:
+- md5: 8c3d0207c6348a9faaa76260271fdde5
+  size: 198344
+  hash: md5
+  path: coco.json

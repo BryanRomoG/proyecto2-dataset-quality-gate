@@ -94,3 +94,30 @@ def test_valid_box_is_not_reported() -> None:
     report = analyze_invalid_boxes(dataset)
 
     assert report.invalid == []
+
+
+def _box(bbox: list[float], area: float) -> dict:
+    return {
+        "id": 1,
+        "image_id": 1,
+        "category_id": 1,
+        "bbox": bbox,
+        "area": area,
+        "iscrowd": 0,
+        "segmentation": [],
+    }
+
+
+def test_zero_width_is_detected() -> None:
+    # area = 0 es coherente con 0*40, así que solo el ancho cero la delata.
+    report = analyze_invalid_boxes(_dataset([_box([10, 10, 0, 40], area=0)]))
+
+    assert len(report.invalid) == 1
+    assert report.invalid[0].reasons == ["zero_width"]
+
+
+def test_zero_height_is_detected() -> None:
+    report = analyze_invalid_boxes(_dataset([_box([10, 10, 40, 0], area=0)]))
+
+    assert len(report.invalid) == 1
+    assert report.invalid[0].reasons == ["zero_height"]

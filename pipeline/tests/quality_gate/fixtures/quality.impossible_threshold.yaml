@@ -1,0 +1,4 @@
+checks:
+  min_images_per_class:
+    threshold: 99999
+    severity: fail

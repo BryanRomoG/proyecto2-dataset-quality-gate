@@ -1,0 +1,22 @@
+{
+  "info": {
+    "description": "Fixture de prueba para la compuerta de calidad",
+    "version": "1.0",
+    "date_created": "2026-09-15T00:00:00.000Z"
+  },
+  "licenses": [],
+  "images": [
+    { "id": 1, "file_name": "img-001.jpg", "width": 640, "height": 480 },
+    { "id": 2, "file_name": "img-002.jpg", "width": 640, "height": 480 },
+    { "id": 3, "file_name": "img-003.jpg", "width": 640, "height": 480 }
+  ],
+  "annotations": [
+    { "id": 1, "image_id": 1, "category_id": 1, "bbox": [0, 0, 10, 10], "area": 100, "iscrowd": 0, "segmentation": [] },
+    { "id": 2, "image_id": 2, "category_id": 1, "bbox": [0, 0, 10, 10], "area": 100, "iscrowd": 0, "segmentation": [] },
+    { "id": 3, "image_id": 1, "category_id": 2, "bbox": [0, 0, 10, 10], "area": 100, "iscrowd": 0, "segmentation": [] }
+  ],
+  "categories": [
+    { "id": 1, "name": "car", "supercategory": "none" },
+    { "id": 2, "name": "person", "supercategory": "none" }
+  ]
+}

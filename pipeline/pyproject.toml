@@ -9,6 +9,8 @@ dependencies = [
     "pyyaml>=6.0",
     "Pillow>=10.0",
     "ImageHash>=4.3",
+    "mcp>=2.0,<3",
+    "google-genai>=1.0,<3",
 ]
 
 [project.optional-dependencies]
@@ -16,6 +18,7 @@ dev = [
     "pytest>=8.0",
     "pytest-bdd>=7.0",
     "ruff>=0.6",
+    "dvc[s3]>=3.0",
 ]
 
 [build-system]
@@ -27,7 +30,11 @@ packages = ["src/dataset_pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "tests"]
+markers = [
+    "requiere_minio: necesita un remote DVC (MinIO) alcanzable; se salta si no lo está",
+    "requiere_gemini_api_key: llama a la API real de Gemini; se salta si GEMINI_API_KEY no está configurada",
+]
 
 [tool.ruff]
 line-length = 100

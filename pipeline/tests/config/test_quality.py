@@ -31,3 +31,31 @@ def test_invalid_severity_is_rejected() -> None:
         QualityPolicy.model_validate(
             {"checks": {"min_images_per_class": {"threshold": 300, "severity": "critical"}}}
         )
+
+
+def test_policy_can_be_parsed_from_text() -> None:
+    from dataset_pipeline.config.quality import parse_quality_policy
+
+    policy = parse_quality_policy(
+        """
+checks:
+  min_images_per_class:
+    threshold: 300
+    severity: fail
+"""
+    )
+
+    assert policy.checks["min_images_per_class"].threshold == 300
+
+
+def test_policy_from_text_rejects_a_check_without_threshold() -> None:
+    from dataset_pipeline.config.quality import parse_quality_policy
+
+    with pytest.raises(ValidationError):
+        parse_quality_policy(
+            """
+checks:
+  min_images_per_class:
+    severity: fail
+"""
+        )

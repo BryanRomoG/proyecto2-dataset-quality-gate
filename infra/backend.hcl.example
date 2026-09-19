@@ -1,0 +1,12 @@
+# Copiar como backend.hcl (sin .example) en CADA capa (network/, storage/,
+# data/, compute/) y llenar con el bucket real que salió del bootstrap.
+# backend.hcl está en .gitignore — nunca se commitea, ni con valores de dev.
+
+bucket = "dataset-quality-gate-dev-tfstate"
+region = "us-east-1"
+
+# Terraform >= 1.10: locking nativo en S3, sin DynamoDB.
+use_lockfile = true
+
+# Si el equipo usa Terraform < 1.10, comentar la línea de arriba y usar:
+# dynamodb_table = "dataset-quality-gate-dev-tflock"

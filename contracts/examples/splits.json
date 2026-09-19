@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "ratios": {
+    "train": 0.70,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "assignments": {
+    "1": "train",
+    "2": "train",
+    "3": "train",
+    "4": "train",
+    "5": "val",
+    "6": "test"
+  },
+  "counts": {
+    "train": 4,
+    "val": 1,
+    "test": 1
+  }
+}

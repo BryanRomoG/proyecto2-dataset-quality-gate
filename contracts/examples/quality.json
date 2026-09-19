@@ -1,0 +1,23 @@
+{
+  "passed": false,
+  "checks": [
+    {
+      "name": "min_images_per_class",
+      "value": 214.0,
+      "threshold": 300.0,
+      "direction": "gte",
+      "severity": "fail",
+      "passed": false,
+      "offending_samples": ["car", "person"]
+    },
+    {
+      "name": "invalid_boxes_count",
+      "value": 0.0,
+      "threshold": 5.0,
+      "direction": "lte",
+      "severity": "warn",
+      "passed": true,
+      "offending_samples": []
+    }
+  ]
+}

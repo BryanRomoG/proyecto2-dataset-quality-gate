@@ -41,9 +41,12 @@ function buildExampleImages() {
   });
 }
 
-export async function seed(): Promise<void> {
+// `targetDb` inyectable: db.test.ts la usa para sembrar la base de tests
+// aislada (server/src/db/test-client.ts) en vez de la base real de
+// desarrollo. El CLI (`npm run db:seed`) sigue usando la real por default.
+export async function seed(targetDb: typeof db = db): Promise<void> {
   for (const category of exampleCategories) {
-    await db
+    await targetDb
       .insert(categories)
       .values(category)
       .onDuplicateKeyUpdate({ set: { id: sql`id` } });
@@ -55,7 +58,7 @@ export async function seed(): Promise<void> {
 
   for (const image of buildExampleImages()) {
     const { buffer, ...row } = image;
-    await db
+    await targetDb
       .insert(images)
       .values(row)
       .onDuplicateKeyUpdate({ set: { id: sql`id` } });
