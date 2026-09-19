@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import { useEffect, useState } from 'react';
 import { Bar, BarChart, Cell, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   type DashboardSummary,
@@ -7,43 +6,40 @@ import {
   fetchDashboardSummary,
   fetchObjectsByCategory,
 } from '../../api/dashboard';
+import { fetchQualityMetrics } from '../../api/telemetry';
+import { PipelineTelemetry } from './PipelineTelemetry';
 import './dashboard.css';
+import { DEFAULT_REFRESH_MS, useLiveData } from './useLiveData';
 
-type State =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; summary: DashboardSummary; objectsByCategory: ObjectsByCategory };
+type DatabaseMetrics = {
+  summary: DashboardSummary;
+  objectsByCategory: ObjectsByCategory;
+};
+
+// Definido fuera del componente a propósito: `useLiveData` lo usa como
+// fuente estable del poll, y una función nueva en cada render reiniciaría
+// el intervalo sin parar.
+async function fetchDatabaseMetrics(): Promise<DatabaseMetrics> {
+  const [summary, objectsByCategory] = await Promise.all([
+    fetchDashboardSummary(),
+    fetchObjectsByCategory(),
+  ]);
+  return { summary, objectsByCategory };
+}
 
 export function Dashboard() {
-  const [state, setState] = useState<State>({ status: 'loading' });
+  // Dos fuentes independientes: las métricas de la BD (portal) y la
+  // telemetría real del pipeline (T-202). Si una falla o todavía no está
+  // materializada, la otra se sigue mostrando.
+  const database = useLiveData(fetchDatabaseMetrics);
+  const telemetry = useLiveData(fetchQualityMetrics);
 
-  useEffect(() => {
-    let cancelled = false;
+  function refreshAll() {
+    void database.refresh();
+    void telemetry.refresh();
+  }
 
-    async function load() {
-      setState({ status: 'loading' });
-      try {
-        const [summary, objectsByCategory] = await Promise.all([
-          fetchDashboardSummary(),
-          fetchObjectsByCategory(),
-        ]);
-        if (!cancelled) {
-          setState({ status: 'ready', summary, objectsByCategory });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setState({ status: 'error', message: (error as Error).message });
-        }
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (state.status === 'loading') {
+  if (database.state.status === 'loading') {
     return (
       <section aria-label="Dashboard" className="dashboard">
         <output className="dashboard__hint">Cargando métricas...</output>
@@ -51,17 +47,17 @@ export function Dashboard() {
     );
   }
 
-  if (state.status === 'error') {
+  if (database.state.status === 'error') {
     return (
       <section aria-label="Dashboard" className="dashboard">
         <p role="alert" className="dashboard__error">
-          No se pudieron cargar las métricas del dashboard: {state.message}
+          No se pudieron cargar las métricas del dashboard: {database.state.message}
         </p>
       </section>
     );
   }
 
-  const { summary, objectsByCategory } = state;
+  const { summary, objectsByCategory } = database.state.data;
   const progressPercent =
     summary.totalImages === 0
       ? 0
@@ -69,7 +65,26 @@ export function Dashboard() {
 
   return (
     <section aria-label="Dashboard" className="dashboard">
-      <h2 className="dashboard__title">Dashboard</h2>
+      <div className="dashboard__panel-header">
+        <h2 className="dashboard__title">Dashboard</h2>
+        <div className="dashboard__live">
+          <span className="dashboard__source" data-testid="dashboard-updated-at">
+            Actualizado {database.state.updatedAt.toLocaleTimeString()} · se refresca solo cada{' '}
+            {DEFAULT_REFRESH_MS / 1000} s
+          </span>
+          <button type="button" className="dashboard__refresh" onClick={refreshAll}>
+            Actualizar ahora
+          </button>
+        </div>
+      </div>
+
+      {/* Un refetch fallido no borra lo que ya estaba en pantalla: se avisa
+          y se sigue mostrando la última lectura buena. */}
+      {database.state.warning !== null && (
+        <output className="dashboard__warning">
+          El último refresco falló ({database.state.warning}); se muestra la lectura anterior.
+        </output>
+      )}
 
       <div className="dashboard__metrics">
         <div className="dashboard__metric" style={{ '--metric-color': '#3fa9f5' } as CSSProperties}>
@@ -159,6 +174,16 @@ export function Dashboard() {
           </BarChart>
         </div>
       </div>
+
+      {telemetry.state.status === 'loading' && (
+        <output className="dashboard__hint">Cargando telemetría del pipeline...</output>
+      )}
+      {telemetry.state.status === 'error' && (
+        <p role="alert" className="dashboard__error">
+          No se pudo cargar la telemetría del pipeline: {telemetry.state.message}
+        </p>
+      )}
+      {telemetry.state.status === 'ready' && <PipelineTelemetry result={telemetry.state.data} />}
     </section>
   );
 }
