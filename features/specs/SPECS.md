@@ -186,13 +186,7 @@ primer SPEC. Los `.feature` viven en `features/specs/`, con nombre
   coincidencia de texto libre.
 - **Auditoría de `git ls-files` (DoD del issue)**: sin `.env`,
   `__pycache__`, `.venv`, `.dvc/cache`, `.tfstate` ni `node_modules`
-  versionados. Sí aparecen 3 archivos `.jpg` bajo
-  `server/src/db/seed-assets/` — **no son "imagen suelta" del dataset de
-  anotación** (la preocupación real del AC, que las ~300+ imágenes del
-  Proyecto 2 nunca bypaseen DVC): son las 3 imágenes de ejemplo del
-  seeder del portal Node, del Proyecto 1, ya entregado y evaluado. Se
-  documentan aquí en vez de borrarlas sin consultar al equipo — están
-  fuera del alcance de este ticket.
+  versionados. Aparecían 3 `.jpg` bajo `server/src/db/seed-assets/` (fixtures del seeder del portal, no del dataset); ya no: se incrustaron como base64 en `server/src/db/seed-images.ts` y `git ls-files` no devuelve ningún binario.
 - Revisado también `git log --all -p -S 'AKIA'` (llaves AWS) y archivos
   `.env`/`.tfstate` creados alguna vez en el historial completo, no solo
   en `HEAD` (M2 del plan de trabajo: "no basta con limpiar HEAD, se revisa

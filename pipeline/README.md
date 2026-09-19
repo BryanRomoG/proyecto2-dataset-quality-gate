@@ -216,11 +216,7 @@ prod` porque las versiones anteriores solo viven en S3. Ejemplo real,
 `v0.3.0 → v1.0.0`: +39 imágenes, +183 cajas, −16 cajas (las de `bicycle`
 descartadas con `drop_category.py`) y objetos pequeños de 3.47 % a 5.05 %.
 
-**Nota sobre `.jpg` en `git ls-files`:** existen 3 en
-`server/src/db/seed-assets/` — son fixtures de semilla de Proyecto 1
-(`npm run db:seed`), preexistentes desde el commit base, no parte del
-dataset de este proyecto. El chequeo de "datos fuera de Git" de T-3.2 se
-refiere a `data/` (donde sí está limpio), no a esos.
+**`.jpg` en `git ls-files`:** ninguno. Las 3 imágenes de semilla del portal (`npm run db:seed`) viven ahora incrustadas como base64 en `server/src/db/seed-images.ts`; los datos del proyecto solo están en DVC.
 
 Specs en `features/specs/f6-01-dvc-pipeline.feature`. El escenario de
 mismo hash DEV/PROD está marcado `@requiere_minio` y se salta solo si no
