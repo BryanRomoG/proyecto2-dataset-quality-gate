@@ -39,9 +39,7 @@ def test_phash_detects_a_recompressed_copy() -> None:
     original = _sample_image()
     copy_recompressed = _recompress(original, quality=40)
 
-    report = find_duplicate_pairs(
-        {1: original, 2: copy_recompressed}, distance_threshold=8
-    )
+    report = find_duplicate_pairs({1: original, 2: copy_recompressed}, distance_threshold=8)
 
     assert len(report.pairs) == 1
     pair = report.pairs[0]

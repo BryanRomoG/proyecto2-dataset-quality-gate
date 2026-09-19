@@ -43,9 +43,7 @@ def generate(images_per_class: int, images_dir: Path) -> dict:
             file_name = f"{category['name']}-{i:04d}.jpg"
             _draw_image(images_dir / file_name, seed=image_id)
 
-            images.append(
-                {"id": image_id, "file_name": file_name, "width": 200, "height": 200}
-            )
+            images.append({"id": image_id, "file_name": file_name, "width": 200, "height": 200})
             annotations.append(
                 {
                     "id": ann_id,
@@ -98,9 +96,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--images-per-class", type=int, default=15)
     parser.add_argument("--out", required=True, help="Ruta del coco.json de salida")
-    parser.add_argument(
-        "--images-dir", required=True, help="Carpeta donde se escriben los .jpg"
-    )
+    parser.add_argument("--images-dir", required=True, help="Carpeta donde se escriben los .jpg")
     args = parser.parse_args()
 
     images_dir = Path(args.images_dir)

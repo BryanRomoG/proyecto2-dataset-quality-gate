@@ -15,9 +15,7 @@ def counts_per_class() -> dict:
 
 @when("corre el analizador")
 def run_analyzer(context: dict) -> None:
-    context["report"] = analyze_class_imbalance(
-        context["counts"], context["min_images_per_class"]
-    )
+    context["report"] = analyze_class_imbalance(context["counts"], context["min_images_per_class"])
 
 
 @then("reporta el ratio clase mayoritaria / minoritaria")

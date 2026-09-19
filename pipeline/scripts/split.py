@@ -23,8 +23,7 @@ if __name__ == "__main__":
 
     quality_metrics = json.loads(Path(args.quality_metrics).read_text(encoding="utf-8"))
     duplicate_pairs = [
-        (pair["image_id_a"], pair["image_id_b"])
-        for pair in quality_metrics["duplicates"]["pairs"]
+        (pair["image_id_a"], pair["image_id_b"]) for pair in quality_metrics["duplicates"]["pairs"]
     ]
 
     result = generate_stratified_splits(

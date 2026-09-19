@@ -57,9 +57,7 @@ def both_are_reported(context: dict) -> None:
 
 @then("se valida que area sea coherente con width*height")
 def area_consistency_is_checked(context: dict) -> None:
-    negative_width_box = next(
-        box for box in context["report"].invalid if box.annotation_id == 1
-    )
+    negative_width_box = next(box for box in context["report"].invalid if box.annotation_id == 1)
     # width negativo => width*height también negativo => nunca coincide con
     # un area declarada positiva: el mismo chequeo lo detecta.
     assert "area_inconsistent_with_width_height" in negative_width_box.reasons
