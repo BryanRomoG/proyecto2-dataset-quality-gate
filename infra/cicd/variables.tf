@@ -21,4 +21,13 @@ variable "github_repo" {
 variable "state_bucket_name" {
   description = "Bucket S3 de remote state creado por infra/bootstrap — el rol de CI necesita leer/lockear ahí para poder correr terraform plan en cada capa."
   type        = string
+
+  # Este valor se incrusta literal en el ARN de la policy del rol. Si entra un
+  # placeholder ("<state_bucket_name del bootstrap>"), el apply pasa sin ruido
+  # y el permiso queda apuntando a un bucket que no existe; el fallo reaparece
+  # mucho después como un AccessDenied en el terraform plan de CI.
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", var.state_bucket_name))
+    error_message = "state_bucket_name debe ser el nombre real del bucket (minúsculas, 3-63 caracteres), no un placeholder: usa el output state_bucket_name de infra/bootstrap."
+  }
 }

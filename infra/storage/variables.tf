@@ -21,6 +21,11 @@ variable "aws_region" {
 variable "network_state_bucket" {
   description = "Bucket S3 donde vive el remote state de la capa network (mismo bucket de backend, distinta key)."
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", var.network_state_bucket))
+    error_message = "network_state_bucket debe ser el nombre real del bucket de state (minúsculas, 3-63 caracteres), no un placeholder."
+  }
 }
 
 variable "network_state_key" {

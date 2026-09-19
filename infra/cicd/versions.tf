@@ -10,7 +10,9 @@
 #   terraform apply \
 #     -var="github_org=BryanRomoG" \
 #     -var="github_repo=proyecto2-dataset-quality-gate" \
-#     -var="state_bucket_name=<state_bucket_name del bootstrap>"
+#     -var="state_bucket_name=dataset-quality-gate-dev-tfstate"
+#   # state_bucket_name = el output real del bootstrap, nunca un placeholder:
+#   # se incrusta literal en el ARN de la policy del rol.
 #   # copiar el output github_actions_role_arn a las variables/secrets del
 #   # repo en GitHub (ver infra/README.md)
 # ---------------------------------------------------------------------------

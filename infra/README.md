@@ -96,8 +96,15 @@ terraform init
 terraform apply \
   -var="github_org=BryanRomoG" \
   -var="github_repo=proyecto2-dataset-quality-gate" \
-  -var="state_bucket_name=<state_bucket_name del bootstrap>"
+  -var="state_bucket_name=dataset-quality-gate-dev-tfstate"
 ```
+
+`state_bucket_name` tiene que ser el nombre **real** del bucket (el output
+de `infra/bootstrap`), no el placeholder: ese string se incrusta literal en
+el ARN de la policy del rol, así que un valor equivocado deja al rol sin
+permiso sobre el bucket de verdad y el error solo aparece después, como
+`AccessDenied` al `s3:PutObject` del `.tflock` en el `terraform plan` de CI.
+La variable valida el formato para atajar ese caso.
 
 Con el output `github_actions_role_arn`, en GitHub ir a
 **Settings → Secrets and variables → Actions → Variables** (no "Secrets":
