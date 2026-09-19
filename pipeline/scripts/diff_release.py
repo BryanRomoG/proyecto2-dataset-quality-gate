@@ -11,10 +11,10 @@ import json
 import subprocess
 
 import dvc.api
-import yaml
 
 from dataset_pipeline.coco.models import CocoDataset
 from dataset_pipeline.coco.stats import images_per_category
+from dataset_pipeline.config.quality import QualityPolicy, parse_quality_policy
 
 
 def _load_dataset_at(rev: str) -> CocoDataset:
@@ -22,11 +22,11 @@ def _load_dataset_at(rev: str) -> CocoDataset:
     return CocoDataset.model_validate(json.loads(raw))
 
 
-def _load_quality_policy_at(rev: str) -> dict:
+def _load_quality_policy_at(rev: str) -> QualityPolicy:
     raw = subprocess.run(
         ["git", "show", f"{rev}:quality.yaml"], capture_output=True, text=True, check=True
     ).stdout
-    return yaml.safe_load(raw)
+    return parse_quality_policy(raw)
 
 
 def diff(rev_a: str, rev_b: str) -> dict:
@@ -39,7 +39,7 @@ def diff(rev_a: str, rev_b: str) -> dict:
     ann_ids_b = {ann.id for ann in dataset_b.annotations}
 
     policy = _load_quality_policy_at(rev_b)
-    min_threshold = policy["checks"]["min_images_per_class"]["threshold"]
+    min_threshold = policy.checks["min_images_per_class"].threshold
     counts_b = images_per_category(dataset_b)
     below_minimum = sorted(name for name, count in counts_b.items() if count < min_threshold)
 

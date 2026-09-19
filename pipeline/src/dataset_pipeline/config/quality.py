@@ -38,6 +38,11 @@ class QualityPolicy(BaseModel):
         return self
 
 
+def parse_quality_policy(text: str) -> QualityPolicy:
+    """Valida el texto de un quality.yaml (p. ej. el de otra revisión de git,
+    que no es un archivo en disco) sin pasar por un `dict` crudo."""
+    return QualityPolicy.model_validate(yaml.safe_load(text))
+
+
 def load_quality_policy(path: str | Path) -> QualityPolicy:
-    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    return QualityPolicy.model_validate(raw)
+    return parse_quality_policy(Path(path).read_text(encoding="utf-8"))
