@@ -6,6 +6,7 @@
   --text: #e7e5e0;
   --text-muted: #8b8f98;
   --accent: #3fa9f5;
+  --ok: #2dd4a7;
   --danger: #e5484d;
 
   background: var(--bg);
@@ -102,4 +103,127 @@
 .dashboard__chart-scroll {
   width: 100%;
   overflow-x: auto;
+}
+
+/* --- T-204: cabecera "en vivo", avisos y telemetría del pipeline --- */
+
+.dashboard__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dashboard__live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard__source {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dashboard__refresh {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.dashboard__refresh:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.dashboard__warning {
+  margin: 0;
+  font-size: 13px;
+  color: #f4a261;
+}
+
+.dashboard__muted {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard__muted code,
+.dashboard__hint code,
+.dashboard__reasons code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--text);
+}
+
+.dashboard__telemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.dashboard__reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* Barras propias (no Recharts): son una lista de conteos por clase, y un
+   chart completo aquí solo agregaría peso sin decir nada más. */
+.dashboard__bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard__bar-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 160px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.dashboard__bar-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard__bar-track {
+  background: var(--border);
+  height: 8px;
+  display: block;
+}
+
+.dashboard__bar-fill {
+  background: var(--accent);
+  height: 100%;
+  display: block;
+}
+
+.dashboard__bar-fill--alert {
+  background: var(--danger);
+}
+
+.dashboard__bar-value {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--text-muted);
 }

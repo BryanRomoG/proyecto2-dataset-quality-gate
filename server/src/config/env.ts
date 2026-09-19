@@ -11,6 +11,12 @@ const envSchema = z.object({
 
   MAX_UPLOAD_MB: z.coerce.number().int().positive().default(10),
 
+  // Carpeta donde el pipeline de Python (DVC) deja sus artefactos reales
+  // (`quality_metrics.json` de T-202, etc.). Es configurable porque en
+  // Docker la carpeta se monta, no viaja dentro de la imagen; la ruta es
+  // relativa a la raíz del repo si no es absoluta.
+  PIPELINE_ARTIFACTS_DIR: z.string().min(1).default('data/processed'),
+
   MINIO_ENDPOINT: z.string().min(1),
   MINIO_PORT: z.coerce.number().int().positive(),
   MINIO_USE_SSL: z

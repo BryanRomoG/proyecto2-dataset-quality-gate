@@ -22,6 +22,13 @@ services:
       MINIO_PORT: 9000
     ports:
       - "3100:3100"
+    volumes:
+      # Artefactos reales del pipeline (T-202): no viajan dentro de la imagen
+      # porque los materializa DVC en el host (`dvc pull` / `dvc repro`). Se
+      # montan de solo lectura: la app los lee, nunca los escribe. Si la
+      # carpeta está vacía, el dashboard lo dice en pantalla en vez de
+      # inventar métricas.
+      - ./data/processed:/app/data/processed:ro
     depends_on:
       mariadb:
         condition: service_healthy

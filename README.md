@@ -27,8 +27,10 @@ dashboard de métricas, búsqueda con filtros y exportación a formato COCO.
 - **Persistencia**: esquema Drizzle (imágenes, anotaciones, categorías) con FKs, índices y tipos correctos; migraciones versionadas que se aplican desde cero sin pasos manuales; seeder idempotente con categorías e imágenes de ejemplo (subidas de verdad a MinIO).
 - **Portal de anotación**: subida de imágenes con validación de tipo/tamaño y feedback; editor de bounding boxes (Konva) con crear/mover/redimensionar/borrar y persistencia al recargar; categorías con color y validación de clase obligatoria; zoom, deshacer, navegación entre imágenes y "guardar y siguiente".
 - **Dashboard**: métricas calculadas desde la BD (nunca hardcodeadas) y gráficas por categoría/progreso (Recharts).
+- **Telemetría real del pipeline en el dashboard (T-204)**: el dashboard consume la salida real de los 5 analizadores del Frente 3 (T-202) desde `GET /api/dashboard/quality-metrics`, que sirve el artefacto que DVC materializa en `data/processed/quality_metrics.json` (objetos pequeños, desbalance de clases, cajas inválidas, sesgo espacial con percentiles y duplicados por pHash). La pantalla **se actualiza sola cada 5 s sin recargar** (refetch periódico, en pausa mientras la pestaña está oculta y con refresco inmediato al volver a ella); si un refresco falla se conserva la última lectura buena con un aviso, y si el artefacto todavía no está materializado el dashboard dice qué falta (`dvc pull` / `dvc repro`) en vez de mostrar ceros como si fueran datos reales.
 - **Búsqueda**: operadores tipo `car AND person` resueltos en SQL (no en memoria), filtros combinables por clase/estado/rango de fechas, con paginación correcta.
-- **Contratos del dataset (T-104)**: sexta pantalla ("Contratos") que renderiza completos los tres contratos congelados en T-101 — `quality.json` (compuerta: valor vs umbral, dirección, severidad y muestras ofensoras por check), `splits.json` (seed, ratios, counts y la asignación imagen → split) y `versions.json` (versión actual e historial de releases con su diff: imágenes/cajas agregadas y eliminadas, imágenes por clase y clases bajo el mínimo). Se sirven tal cual desde `GET /api/contracts/{quality,splits,versions}` y se validan con Zod en el cliente; todavía **no** son datos reales del pipeline (eso es T-204).
+- **Contratos del dataset (T-104)**: sexta pantalla ("Contratos") que renderiza completos los tres contratos congelados en T-101 — `quality.json` (compuerta: valor vs umbral, dirección, severidad y muestras ofensoras por check), `splits.json` (seed, ratios, counts y la asignación imagen → split) y `versions.json` (versión actual e historial de releases con su diff: imágenes/cajas agregadas y eliminadas, imágenes por clase y clases bajo el mínimo). Se sirven tal cual desde `GET /api/contracts/{quality,splits,versions}` y se validan con Zod en el cliente. Esta pantalla muestra a propósito los contratos **congelados** (la forma acordada del dato, no el dato vivo); la salida real del pipeline se ve en el Dashboard (T-204).
+=======
 - **Exportación COCO**: JSON válido con `images`/`annotations`/`categories`, ids consistentes, `bbox` en píxeles absolutos, `area` coherente, `iscrowd` presente, descarga completa del dataset desde la UI.
 - **Vitest** (unit/integración) y **Cucumber.js** (Gherkin, con trazabilidad SPEC → `.feature` → step definitions) cubriendo las reglas críticas de negocio, incluidas anotación y exportación COCO.
 
@@ -106,6 +108,8 @@ server/src/
   lib/minio.ts       Cliente MinIO
   db/               Esquema Drizzle, migraciones, seeder (ver server/src/db/README.md)
 contracts/examples/ Contratos congelados (T-101) que consume la pantalla "Contratos"
+data/processed/     Artefactos reales del pipeline (DVC): telemetría que lee el dashboard
+=======
 features/           SPECs en Gherkin + step definitions (ver features/README.md)
 ```
 
