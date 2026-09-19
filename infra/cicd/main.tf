@@ -20,6 +20,18 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 # Restringido por "sub" a pull_request de este repo exacto: ninguna otra
 # rama, repo o tipo de evento puede asumirlo aunque conozca el ARN.
 # ---------------------------------------------------------------------------
+locals {
+  # Dos formas del mismo "sub" porque GitHub cambió el formato: la nueva lleva
+  # los IDs inmutables (repo:owner@<id>/repo@<id>:pull_request) y la vieja solo
+  # los nombres. Se aceptan ambas para que el rol no se rompa según cuál emita
+  # GitHub; siguen siendo valores exactos (StringEquals, sin comodines) y
+  # siguen limitadas al evento pull_request de este repo.
+  github_actions_subs = [
+    "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:pull_request",
+    "repo:${var.github_org}/${var.github_repo}:pull_request",
+  ]
+}
+
 data "aws_iam_policy_document" "github_actions_trust" {
   statement {
     effect  = "Allow"
@@ -39,7 +51,7 @@ data "aws_iam_policy_document" "github_actions_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:pull_request"]
+      values   = local.github_actions_subs
     }
   }
 }

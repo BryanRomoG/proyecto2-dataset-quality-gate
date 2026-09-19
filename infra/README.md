@@ -117,8 +117,19 @@ disponibles para PRs desde forks igual que para el mismo repo) y crear:
 
 El rol (`infra/cicd/main.tf`) queda restringido a:
 - Confianza (`assume_role_policy`): solo `token.actions.githubusercontent.com`
-  con `aud = sts.amazonaws.com` y `sub = repo:BryanRomoG/proyecto2-dataset-quality-gate:pull_request`
-  — ningún otro repo, rama o tipo de evento puede asumirlo aunque conozca el ARN.
+  con `aud = sts.amazonaws.com` y un `sub` de la lista exacta en
+  `local.github_actions_subs` — ningún otro repo, rama o tipo de evento puede
+  asumirlo aunque conozca el ARN. Son dos valores porque GitHub emite el `sub`
+  con los IDs numéricos inmutables del owner y del repo
+  (`repo:BryanRomoG@178322887/proyecto2-dataset-quality-gate@1366771913:pull_request`)
+  y se acepta también el formato viejo sin IDs.
+
+> **No edites esta trust policy a mano en la consola de AWS.** Terraform es el
+> dueño del recurso: el siguiente `apply` revierte el cambio y CI se rompe con
+> `Not authorized to perform sts:AssumeRoleWithWebIdentity`. Si el `sub` real
+> cambia, ajústalo en `infra/cicd/main.tf` y aplica. Para ver el `sub` que
+> emite GitHub, el workflow tiene un paso `Debug OIDC token claims` en el job
+> `plan (network)`.
 - Permisos: `ReadOnlyAccess` (managed policy de AWS) más lectura/lock del
   bucket de state — suficiente para `terraform plan`, insuficiente para
   crear, modificar o borrar nada. El `apply` real sigue siendo manual,

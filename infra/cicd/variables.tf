@@ -18,6 +18,23 @@ variable "github_repo" {
   type        = string
 }
 
+# GitHub emite el claim "sub" con los IDs numéricos inmutables del owner y del
+# repo (repo:owner@<id>/repo@<id>:<evento>). Son inmutables a propósito: si
+# alguien renombra el usuario o el repo, o borra la cuenta y otro reclama el
+# nombre, el ID no se reutiliza y la trust policy no se puede secuestrar.
+# Obtenerlos con:  gh api repos/BryanRomoG/proyecto2-dataset-quality-gate --jq '{repo: .id, owner: .owner.id}'
+variable "github_org_id" {
+  description = "ID numérico del owner del repo en GitHub."
+  type        = string
+  default     = "178322887"
+}
+
+variable "github_repo_id" {
+  description = "ID numérico del repo en GitHub."
+  type        = string
+  default     = "1366771913"
+}
+
 variable "state_bucket_name" {
   description = "Bucket S3 de remote state creado por infra/bootstrap — el rol de CI necesita leer/lockear ahí para poder correr terraform plan en cada capa."
   type        = string
