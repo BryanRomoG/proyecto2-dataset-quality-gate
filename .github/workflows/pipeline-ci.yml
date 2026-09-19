@@ -1,0 +1,40 @@
+name: Pipeline CI (Python)
+
+# Separado de ci.yml (stack Node del portal, T-4.3/Josue) a propósito: son
+# dos ecosistemas independientes (npm vs pip) con triggers/pasos distintos
+# — un solo archivo mezclando ambos sería más frágil y más difícil de leer
+# cuando algo falla.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Tests (pytest, incluye BDD vía pytest-bdd)
+        run: pytest -v

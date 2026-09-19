@@ -1,0 +1,311 @@
+/* Mismos tokens que dashboard.css: las dos pantallas son "de lectura" y
+   deben verse como la misma app, no como dos temas distintos. */
+.contracts {
+  --bg: #16181c;
+  --surface: #1c1f24;
+  --border: #2b2f36;
+  --border-strong: #3d434c;
+  --text: #e7e5e0;
+  --text-muted: #8b8f98;
+  --accent: #3fa9f5;
+  --ok: #2dd4a7;
+  --danger: #e5484d;
+
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  padding: 16px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contracts__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.contracts__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.contracts__subtitle {
+  margin: 6px 0 0;
+  max-width: 70ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.contracts__subtitle code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.contracts__reload {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.contracts__reload:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.contracts__hint {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.contracts__error {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.contracts__panel {
+  border: 1px solid var(--border);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contracts__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.contracts__panel-title {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.contracts__badge {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+
+.contracts__badge--ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.contracts__badge--fail {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.contracts__badge--neutral {
+  color: var(--text-muted);
+}
+
+.contracts__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  display: block;
+  overflow-x: auto;
+}
+
+.contracts__caption {
+  caption-side: bottom;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.contracts__table th,
+.contracts__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.contracts__table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.contracts__table tbody th {
+  font-weight: 500;
+}
+
+.contracts__cell-name,
+.contracts__cell-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  white-space: nowrap;
+}
+
+.contracts__muted {
+  color: var(--text-muted);
+}
+
+.contracts__chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.contracts__chip {
+  background: var(--surface);
+  border: 1px solid var(--chip-color, var(--border-strong));
+  color: var(--chip-color, var(--text));
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.contracts__chip--mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.contracts__chip--alert {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.contracts__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.contracts__metric {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--metric-color, var(--accent));
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contracts__metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.contracts__metric-value {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--metric-color, var(--text));
+}
+
+.contracts__ratio-bar {
+  display: flex;
+  height: 8px;
+  width: 100%;
+  background: var(--border);
+}
+
+.contracts__ratio-segment {
+  height: 100%;
+}
+
+.contracts__releases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contracts__release {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contracts__release-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.contracts__release-version {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.contracts__release-meta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.contracts__release-message {
+  margin: 0;
+  font-size: 13px;
+}
+
+.contracts__diff {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contracts__diff-title {
+  margin: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.contracts__diff-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.contracts__diff-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  min-width: 190px;
+}

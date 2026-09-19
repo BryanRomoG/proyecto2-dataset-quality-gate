@@ -18,7 +18,19 @@ npm-debug.log*
 __pycache__/
 *.pyc
 .venv/
+venv/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+.mypy_cache/
 
+# --- DVC (Frente 6) ---
+.dvc/cache
+.dvc/tmp
+
+# --- Terraform (Frente 9) — nunca versionar estado ni secretos ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
