@@ -6,8 +6,8 @@ stages:
     deps:
     - path: data/raw/coco.json
       hash: md5
-      md5: 8c3d0207c6348a9faaa76260271fdde5
-      size: 198344
+      md5: 0e1c8370c358bd96856c404a68c7f739
+      size: 359205
     - path: pipeline/scripts/validate.py
       hash: md5
       md5: 688e9f6a9d7f1f6a628fb0ca52cfe9f8
@@ -20,8 +20,8 @@ stages:
     outs:
     - path: data/processed/coco.validated.json
       hash: md5
-      md5: 8c3d0207c6348a9faaa76260271fdde5
-      size: 198344
+      md5: 0e1c8370c358bd96856c404a68c7f739
+      size: 359205
   analyze:
     cmd: python pipeline/scripts/analyze.py --coco 
       data/processed/coco.validated.json --images-dir data/raw/images 
@@ -29,13 +29,13 @@ stages:
     deps:
     - path: data/processed/coco.validated.json
       hash: md5
-      md5: 8c3d0207c6348a9faaa76260271fdde5
-      size: 198344
+      md5: 0e1c8370c358bd96856c404a68c7f739
+      size: 359205
     - path: data/raw/images
       hash: md5
-      md5: 3d6bac6abde76be98a7edcffb5b596f1.dir
-      size: 37831275
-      nfiles: 200
+      md5: 6bd16243e4726f4924ebabd09df4defb.dir
+      size: 61742172
+      nfiles: 330
     - path: pipeline/scripts/analyze.py
       hash: md5
       md5: 66d0021d7818e853dd8d24cf8ec8fd83
@@ -52,8 +52,8 @@ stages:
     outs:
     - path: data/processed/quality_metrics.json
       hash: md5
-      md5: 92fc7258d35f2999cc7b9f170c0320dd
-      size: 1032
+      md5: 4a2e6bb576efe89832a72806a91c85a4
+      size: 1058
   split:
     cmd: python pipeline/scripts/split.py --coco 
       data/processed/coco.validated.json --splits-config splits.yaml 
@@ -62,12 +62,12 @@ stages:
     deps:
     - path: data/processed/coco.validated.json
       hash: md5
-      md5: 8c3d0207c6348a9faaa76260271fdde5
-      size: 198344
+      md5: 0e1c8370c358bd96856c404a68c7f739
+      size: 359205
     - path: data/processed/quality_metrics.json
       hash: md5
-      md5: 92fc7258d35f2999cc7b9f170c0320dd
-      size: 1032
+      md5: 4a2e6bb576efe89832a72806a91c85a4
+      size: 1058
     - path: pipeline/scripts/split.py
       hash: md5
       md5: 19d61b6ba7b5a46cefb8f5fd0f8199c3
@@ -84,5 +84,5 @@ stages:
     outs:
     - path: data/processed/splits.json
       hash: md5
-      md5: dbc8f39921d473239405a7728dede56a
-      size: 3998
+      md5: d31bd68c8f76545ac5f170faa3a645a6
+      size: 6883
