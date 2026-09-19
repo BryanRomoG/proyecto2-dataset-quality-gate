@@ -25,6 +25,30 @@ primer SPEC. Los `.feature` viven en `features/specs/`, con nombre
 | SPEC-F8-04 | El Copilot admite no saber en vez de inventar una cifra cuando ninguna herramienta cubre la pregunta | 8 — Dataset Copilot | `f8-01-copilot.feature` | Juan Pablo |
 | SPEC-F8-05 | Toda respuesta que usó al menos una herramienta cita la versión actual del dataset | 8 — Dataset Copilot | `f8-01-copilot.feature` | Juan Pablo |
 | SPEC-F8-06 | Un error del proveedor del LLM se maneja y nunca sale como traceback de Python | 8 — Dataset Copilot | `f8-01-copilot.feature` | Juan Pablo |
+| SPEC-F10-02 | Romper deliberadamente el comparador de la compuerta, o el cálculo de área de `invalid_boxes`, pone la suite correspondiente en rojo — y el código se restaura sin dejar el working tree sucio | 10 — Ruff, pytest y CI | `f10-02-mutacion.feature` | Juan Pablo |
+
+## Notas de Frente 10 — mutation testing (issue #18, T-4.2)
+
+- Prueba de mutación real, no simbólica: escribe bytes mutados de verdad
+  en `evaluator.py`/`invalid_boxes.py`, corre pytest como subproceso
+  contra el archivo mutado, y restaura el original en un `finally` —
+  incluso si el assert de "pasa a rojo" falla, nunca queda mutado en
+  disco. La restauración se verifica dos veces: byte a byte y con
+  `git diff --quiet` (detecta cualquier diferencia real contra lo ya
+  committeado, no solo contra la copia en memoria del test).
+- **Hallazgo real durante este ticket, documentado porque casi produce
+  un falso positivo**: al hacer la demostración manual (mutar → correr
+  pytest → restaurar → volver a correr pytest) dos veces seguidas sobre
+  el mismo archivo en la misma sesión de shell, la segunda corrida
+  "limpia" seguía reportando el fallo de la mutación anterior. La causa
+  no era un bug de Ale ni de este código: era bytecode cacheado en
+  `__pycache__/*.pyc` que el chequeo de mtime de Python no invalidó,
+  porque las dos escrituras cayeron dentro de la misma resolución de
+  reloj. Se corrigió pasando `PYTHONDONTWRITEBYTECODE=1` y
+  `-p no:cacheprovider` a los subprocesos de pytest del step
+  `_run_pytest` en `test_f10_02_mutacion.py` — sin esto, esta misma
+  prueba de mutación podría dar un falso "no se detectó" en el CI si dos
+  runs caen muy cerca en el tiempo.
 
 ## Notas de Frente 4 (issue #9, T-2.3)
 
