@@ -38,3 +38,26 @@ jobs:
 
       - name: Tests (pytest, incluye BDD vía pytest-bdd)
         run: pytest -v
+
+      - name: Quality gate smoke test
+        # El dataset real vive en DVC/S3, no en este checkout -- así que
+        # esto no puede correr contra los datos reales aquí. Corre la
+        # compuerta de verdad (mismo CLI que usa dvc.yaml) contra fixtures
+        # ya versionadas, en las dos direcciones: confirma que pasa cuando
+        # debe pasar, y que bloquea (exit != 0) cuando debe bloquear -- sin
+        # dejar el job en rojo si la compuerta hizo bien su trabajo.
+        run: |
+          python -m dataset_pipeline.quality_gate.cli \
+            --coco tests/quality_gate/fixtures/coco.two_classes.json \
+            --policy tests/quality_gate/fixtures/quality.pass.yaml \
+            --output /tmp/gate-pass.json
+          echo "OK: la compuerta pasó con un umbral alcanzable"
+
+          if python -m dataset_pipeline.quality_gate.cli \
+            --coco tests/quality_gate/fixtures/coco.two_classes.json \
+            --policy tests/quality_gate/fixtures/quality.impossible_threshold.yaml \
+            --output /tmp/gate-fail.json; then
+            echo "ERROR: la compuerta debía bloquear con un umbral imposible y no lo hizo"
+            exit 1
+          fi
+          echo "OK: la compuerta bloqueó (exit != 0) con un umbral imposible, como se esperaba"
