@@ -194,12 +194,27 @@ dvc status -c -r prod        # compara el cache local contra el bucket S3 real d
   `us-east-2`). Ver la sección T-3.2b: hay cuatro `dvc push -r prod` reales y un
   `dvc pull` desde un clon nuevo devolvió el dataset completo.
 
-**Releases y diff entre versiones:**
+**Releases y diff entre versiones:** cada cambio de los punteros de datos en
+`main` es una versión con tag semver (`git tag -l -n1`):
+
+| Tag | Qué contiene |
+|---|---|
+| `v0.1.0` | primer lote real (Ale): 100 imágenes, 456 cajas |
+| `v0.2.0` | + lote de Juan Pablo: 200 imágenes |
+| `v0.3.0` | + lote de Josué y la reserva: 330 imágenes |
+| `v1.0.0` | release final: 369 imágenes, `car` 317 / `person` 362; la compuerta pasa |
 
 ```bash
-python pipeline/scripts/release.py v1.0.0 -m "Primer release del dataset"
-python pipeline/scripts/diff_release.py v0.9.0 v1.0.0   # imágenes/cajas añadidas, clases bajo el mínimo
+python pipeline/scripts/release.py v1.1.0 -m "Descripción"   # dvc push + git tag anotado (árbol limpio)
+python pipeline/scripts/diff_release.py v0.3.0 v1.0.0 --remote prod
 ```
+
+El diff reporta imágenes y cajas añadidas/quitadas, imágenes por clase, clases
+bajo el mínimo, **clases que salieron del mínimo** y el **cambio en el porcentaje
+de objetos pequeños** (lógica en `coco/diff.py`, con pruebas). Con `--remote
+prod` porque las versiones anteriores solo viven en S3. Ejemplo real,
+`v0.3.0 → v1.0.0`: +39 imágenes, +183 cajas, −16 cajas (las de `bicycle`
+descartadas con `drop_category.py`) y objetos pequeños de 3.47 % a 5.05 %.
 
 **Nota sobre `.jpg` en `git ls-files`:** existen 3 en
 `server/src/db/seed-assets/` — son fixtures de semilla de Proyecto 1
