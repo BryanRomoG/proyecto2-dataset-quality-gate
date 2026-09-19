@@ -2,10 +2,12 @@
 
 Estos son tests de integración reales: invocan el `dvc` de verdad (vía
 subprocess) contra el repo tal cual está, no un mock. El escenario que
-necesita MinIO/S3 en vivo se salta si no hay remote alcanzable — no hay
-forma honesta de probarlo sin infraestructura real corriendo.
+necesita MinIO (DEV) y S3 (PROD) en vivo se salta si alguno no es alcanzable
+(sin MinIO, sin credenciales de AWS o sin el dato crudo): no hay forma
+honesta de probarlo sin infraestructura real corriendo.
 """
 
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -127,36 +129,65 @@ def dvc_lock_and_dvc_files_are_tracked(context: dict) -> None:
     assert any(path.endswith(".dvc") for path in tracked)
 
 
-# --- mismo hash entre DEV y PROD (necesita MinIO real) ---
+# --- mismo hash entre DEV y PROD (necesita MinIO y S3 reales) ---
+#
+# DVC direcciona cada objeto por su md5, así que "el mismo content hash en
+# DEV y en PROD" equivale a que los dos remotes tengan EXACTAMENTE los objetos
+# que nombran los punteros de Git (`.dvc` y `dvc.lock`). `dvc status -c -r X`
+# compara esos hashes contra el remote X. La prueba no sube nada: verifica.
 
 
-def _minio_reachable() -> bool:
-    result = _dvc("remote", "list")
-    if "dev" not in result.stdout:
-        return False
-    status = _dvc("status", "-r", "dev")
-    return status.returncode == 0
+def _cloud_status(remote: str) -> subprocess.CompletedProcess | None:
+    """`dvc status -c -r <remote>`, o None si el remote no es alcanzable
+    (no existe, sin MinIO, sin credenciales de AWS...)."""
+    if remote not in _dvc("remote", "list").stdout:
+        return None
+    result = _dvc("status", "-c", "-r", remote)
+    if result.returncode != 0 or "ERROR" in result.stderr:
+        return None
+    return result
+
+
+def _md5_of_pointer(pointer: str) -> str:
+    """md5 que Git tiene registrado para un dato (`data/raw/*.dvc`)."""
+    return yaml.safe_load((REPO_ROOT / pointer).read_text(encoding="utf-8"))["outs"][0]["md5"]
 
 
 @given("un dataset empujado a MinIO (dev) y a S3 (prod)", target_fixture="context")
 def dataset_pushed_to_both_remotes() -> dict:
-    if not _minio_reachable():
-        pytest.skip("MinIO (remote 'dev') no está disponible en este entorno")
-    push_dev = _dvc("push", "-r", "dev")
-    assert push_dev.returncode == 0, push_dev.stderr
-    return {}
+    if not _raw_data_available():
+        pytest.skip("data/raw/coco.json no está en disco -- corre 'dvc pull' primero")
+    context: dict = {}
+    for remote, donde in (("dev", "MinIO"), ("prod", "S3 (¿credenciales de AWS?)")):
+        status = _cloud_status(remote)
+        if status is None:
+            pytest.skip(f"el remote '{remote}' ({donde}) no está disponible en este entorno")
+        context[remote] = status
+    return context
 
 
 @when("se compara el content hash del dvc.lock en ambos remotes")
 def compare_hash_between_remotes(context: dict) -> None:
-    pytest.skip("Requiere credenciales reales de AWS S3 para el remote 'prod' — no disponibles")
+    # Una sola consulta por remote (ya hecha arriba): dvc status -c es lento.
+    context["in_sync"] = {remote: "in sync" in context[remote].stdout for remote in ("dev", "prod")}
 
 
 @then("el hash es idéntico")
 def hash_is_identical(context: dict) -> None:
-    pytest.skip("Ver paso anterior")
+    # Cada remote contiene todos los objetos que nombra el workspace (los
+    # punteros de Git): mismos hashes en los dos lados, ninguno "new"/"missing".
+    for remote in ("dev", "prod"):
+        assert context["in_sync"][remote], (
+            f"el remote '{remote}' no está al día con los punteros: {context[remote].stdout}"
+        )
+    lock = yaml.safe_load((REPO_ROOT / "dvc.lock").read_text(encoding="utf-8"))
+    assert lock["stages"], "dvc.lock no declara etapas"
 
 
 @then("ninguna etapa re-empaqueta o re-comprime distinto en PROD")
 def no_stage_repacks_differently(context: dict) -> None:
-    pytest.skip("Ver paso anterior")
+    # Direccionado por contenido: el objeto guardado bajo el md5 del puntero
+    # es byte a byte el archivo local. Si alguien lo re-comprimiera, el md5 del
+    # archivo dejaría de coincidir con el que Git tiene registrado.
+    local_md5 = hashlib.md5((REPO_ROOT / "data" / "raw" / "coco.json").read_bytes()).hexdigest()
+    assert local_md5 == _md5_of_pointer("data/raw/coco.json.dvc")
