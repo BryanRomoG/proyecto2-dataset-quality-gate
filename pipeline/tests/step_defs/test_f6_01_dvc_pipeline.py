@@ -21,12 +21,21 @@ def _dvc(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["dvc", *args], cwd=REPO_ROOT, capture_output=True, text=True)
 
 
+def _raw_data_available() -> bool:
+    """`dvc repro` necesita el dato crudo real en disco, no solo el
+    puntero `.dvc` -- en un checkout limpio (CI, o cualquier clon nuevo)
+    nadie corrió `dvc pull` todavía, así que este archivo no existe."""
+    return (REPO_ROOT / "data" / "raw" / "coco.json").exists()
+
+
 # --- dvc repro es idempotente ---
 
 
 @given("dvc.yaml con etapas declaradas", target_fixture="context")
 def dvc_yaml_exists() -> dict:
     assert (REPO_ROOT / "dvc.yaml").exists()
+    if not _raw_data_available():
+        pytest.skip("data/raw/coco.json no está en disco -- corre 'dvc pull' primero")
     return {}
 
 
@@ -48,6 +57,8 @@ def second_run_does_nothing(context: dict) -> None:
 
 @given("el pipeline ya corrido", target_fixture="context")
 def pipeline_already_run() -> dict:
+    if not _raw_data_available():
+        pytest.skip("data/raw/coco.json no está en disco -- corre 'dvc pull' primero")
     result = _dvc("repro")
     assert result.returncode == 0, result.stderr
     return {}
