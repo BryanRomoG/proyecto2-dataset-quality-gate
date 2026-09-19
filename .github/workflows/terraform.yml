@@ -15,7 +15,10 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  TF_VERSION: "1.9.8"
+  # >= 1.10 obligatorio: el backend S3 solo acepta "use_lockfile" (locking
+  # nativo, sin DynamoDB) a partir de esa versión. Con 1.9.x el init falla
+  # con "Invalid backend configuration argument".
+  TF_VERSION: "1.10.5"
 
 jobs:
   plan:

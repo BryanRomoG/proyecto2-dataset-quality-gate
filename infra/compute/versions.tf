@@ -1,5 +1,7 @@
 terraform {
-  required_version = ">= 1.7.0"
+  # >= 1.10: el backend S3 de abajo se inicializa con use_lockfile=true
+  # (locking nativo en S3, sin tabla DynamoDB), soportado desde 1.10.
+  required_version = ">= 1.10.0"
 
   required_providers {
     aws = {
