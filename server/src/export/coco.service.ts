@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { db } from '../db/client';
 import { annotations, categories, images } from '../db/schema';
 import {
@@ -48,7 +49,12 @@ export function buildCocoDataset(source: CocoSourceData): CocoDataset {
 
   const cocoImages: CocoImage[] = source.images.map((image) => ({
     id: image.id,
-    file_name: image.storageKey,
+    // storageKey SIN la carpeta ("images/<uuid>-nombre.jpg" -> "<uuid>-nombre.jpg"):
+    // el pipeline (CocoImage.file_name) rechaza cualquier ruta, pero el UUID se
+    // conserva a propósito. El nombre original no es único (dos personas pueden
+    // subir "image.jpg") y el UUID es también el nombre con el que el archivo
+    // queda en MinIO, o sea el que DVC baja al disco y el que luego se busca.
+    file_name: posix.basename(image.storageKey),
     width: image.width,
     height: image.height,
   }));

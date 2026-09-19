@@ -32,10 +32,16 @@ def analyze_invalid_boxes(dataset: CocoDataset, area_tolerance: float = 1.0) -> 
         reasons: list[str] = []
         x, y, width, height = annotation.bbox
 
+        # width/height <= 0 es una caja degenerada: negativa o de área cero.
+        # Se distinguen las dos para que el reporte diga qué pasó.
         if width < 0:
             reasons.append("negative_width")
+        elif width == 0:
+            reasons.append("zero_width")
         if height < 0:
             reasons.append("negative_height")
+        elif height == 0:
+            reasons.append("zero_height")
 
         image = images_by_id.get(annotation.image_id)
         if image is not None and (

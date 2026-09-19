@@ -57,9 +57,38 @@ def both_are_reported(context: dict) -> None:
 
 @then("se valida que area sea coherente con width*height")
 def area_consistency_is_checked(context: dict) -> None:
-    negative_width_box = next(
-        box for box in context["report"].invalid if box.annotation_id == 1
-    )
+    negative_width_box = next(box for box in context["report"].invalid if box.annotation_id == 1)
     # width negativo => width*height también negativo => nunca coincide con
     # un area declarada positiva: el mismo chequeo lo detecta.
     assert "area_inconsistent_with_width_height" in negative_width_box.reasons
+
+
+@given("una caja con width cero y otra con height cero", target_fixture="context")
+def dataset_with_zero_sized_boxes() -> dict:
+    def box(ann_id: int, bbox: list[float]) -> dict:
+        return {
+            "id": ann_id,
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": bbox,
+            "area": 0,  # 0 * 40: coherente, así que solo el cero la delata
+            "iscrowd": 0,
+            "segmentation": [],
+        }
+
+    dataset = CocoDataset.model_validate(
+        {
+            "info": {"description": "t", "version": "1.0", "date_created": "2026-01-01"},
+            "licenses": [],
+            "images": [{"id": 1, "file_name": "a.jpg", "width": 200, "height": 200}],
+            "categories": [{"id": 1, "name": "car", "supercategory": "none"}],
+            "annotations": [box(1, [10, 10, 0, 40]), box(2, [10, 10, 40, 0])],
+        }
+    )
+    return {"dataset": dataset}
+
+
+@then("cada una indica si el cero fue en el ancho o en el alto")
+def each_box_says_which_side_is_zero(context: dict) -> None:
+    reasons = {box.annotation_id: box.reasons for box in context["report"].invalid}
+    assert reasons == {1: ["zero_width"], 2: ["zero_height"]}

@@ -1,0 +1,88 @@
+schema: '2.0'
+stages:
+  validate:
+    cmd: python pipeline/scripts/validate.py --coco data/raw/coco.json --out 
+      data/processed/coco.validated.json
+    deps:
+    - path: data/raw/coco.json
+      hash: md5
+      md5: 5a0be753eb7b13daa03fde162345eef1
+      size: 116671
+    - path: pipeline/scripts/validate.py
+      hash: md5
+      md5: 688e9f6a9d7f1f6a628fb0ca52cfe9f8
+      size: 740
+    - path: pipeline/src/dataset_pipeline/coco
+      hash: md5
+      md5: a189215e48f9d279d7846420ef376b49.dir
+      size: 10942
+      nfiles: 5
+    outs:
+    - path: data/processed/coco.validated.json
+      hash: md5
+      md5: 5202b56b97265b6002da876e3c859f9e
+      size: 121231
+  analyze:
+    cmd: python pipeline/scripts/analyze.py --coco 
+      data/processed/coco.validated.json --images-dir data/raw/images 
+      --quality-policy quality.yaml --out data/processed/quality_metrics.json
+    deps:
+    - path: data/processed/coco.validated.json
+      hash: md5
+      md5: 5202b56b97265b6002da876e3c859f9e
+      size: 121231
+    - path: data/raw/images
+      hash: md5
+      md5: 72c3a4a642d3c5c17c9c202ee7bf02de.dir
+      size: 19060994
+      nfiles: 100
+    - path: pipeline/scripts/analyze.py
+      hash: md5
+      md5: 66d0021d7818e853dd8d24cf8ec8fd83
+      size: 3223
+    - path: pipeline/src/dataset_pipeline/analyzers
+      hash: md5
+      md5: f797a43af6264d7ce9a58c069c0cba51.dir
+      size: 9276
+      nfiles: 6
+    - path: quality.yaml
+      hash: md5
+      md5: 9a8baaf8c0a29fef37c9b10a08aedad4
+      size: 428
+    outs:
+    - path: data/processed/quality_metrics.json
+      hash: md5
+      md5: b9ddf855c99300f78bd25eeb4d39b0ac
+      size: 1090
+  split:
+    cmd: python pipeline/scripts/split.py --coco 
+      data/processed/coco.validated.json --splits-config splits.yaml 
+      --quality-metrics data/processed/quality_metrics.json --out 
+      data/processed/splits.json
+    deps:
+    - path: data/processed/coco.validated.json
+      hash: md5
+      md5: 5202b56b97265b6002da876e3c859f9e
+      size: 121231
+    - path: data/processed/quality_metrics.json
+      hash: md5
+      md5: b9ddf855c99300f78bd25eeb4d39b0ac
+      size: 1090
+    - path: pipeline/scripts/split.py
+      hash: md5
+      md5: 747216aa244a596a93ff65396785476e
+      size: 1330
+    - path: pipeline/src/dataset_pipeline/splits
+      hash: md5
+      md5: 493b364f7ceeca6388307dc5e6ab0e38.dir
+      size: 4470
+      nfiles: 2
+    - path: splits.yaml
+      hash: md5
+      md5: e26130fdf7228e4bf2399d0e19ad0255
+      size: 162
+    outs:
+    - path: data/processed/splits.json
+      hash: md5
+      md5: 13222181bb8b5f5b81b1665d6998e872
+      size: 2155

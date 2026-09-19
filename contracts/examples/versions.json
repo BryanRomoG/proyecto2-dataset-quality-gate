@@ -1,0 +1,28 @@
+{
+  "current": "v0.2.0",
+  "releases": [
+    {
+      "version": "v0.1.0",
+      "message": "Dataset inicial de muestra (30 imagenes, 2 clases)",
+      "created_at": "2026-09-10T12:00:00Z",
+      "dvc_rev": "6f96b83",
+      "diff_vs_previous": null
+    },
+    {
+      "version": "v0.2.0",
+      "message": "Primer lote real anotado por el equipo",
+      "created_at": "2026-09-18T08:00:00Z",
+      "dvc_rev": "b3ea54a",
+      "diff_vs_previous": {
+        "from": "v0.1.0",
+        "to": "v0.2.0",
+        "images_added": [100015, 100016, 200015],
+        "images_removed": [],
+        "boxes_added": [32, 33, 34],
+        "boxes_removed": [],
+        "images_per_class": { "car": 214, "person": 208 },
+        "classes_below_minimum": ["car", "person"]
+      }
+    }
+  ]
+}

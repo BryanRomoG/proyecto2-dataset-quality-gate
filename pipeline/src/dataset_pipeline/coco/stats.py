@@ -22,6 +22,11 @@ def images_per_category(dataset: CocoDataset) -> dict[str, int]:
 
     Misma regla de conteo que la compuerta M3: una imagen con 7 cajas de
     "car" cuenta como 1 para "car", no como 7.
+
+    Una categoría declarada pero sin ninguna caja NO es una clase del dataset
+    y no aparece aquí (p. ej. "dog" y "bicycle", que siembra el portal aunque
+    nadie las anote). Si contara como 0, el mínimo por clase sería siempre 0
+    y la compuerta fallaría aunque las clases reales pasaran de sobra.
     """
     counts = {category.name: 0 for category in dataset.categories}
 
@@ -29,4 +34,4 @@ def images_per_category(dataset: CocoDataset) -> dict[str, int]:
         for name in signature:
             counts[name] += 1
 
-    return counts
+    return {name: count for name, count in counts.items() if count > 0}

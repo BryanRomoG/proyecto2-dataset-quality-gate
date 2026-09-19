@@ -17,9 +17,7 @@ def test_valid_splits_config_loads() -> None:
 
 def test_ratios_not_summing_to_one_is_rejected() -> None:
     with pytest.raises(ValidationError, match="deben sumar 1.0"):
-        SplitsConfig.model_validate(
-            {"seed": 42, "ratios": {"train": 0.5, "val": 0.2, "test": 0.2}}
-        )
+        SplitsConfig.model_validate({"seed": 42, "ratios": {"train": 0.5, "val": 0.2, "test": 0.2}})
 
 
 def test_missing_split_is_rejected() -> None:

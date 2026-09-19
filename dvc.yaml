@@ -1,0 +1,44 @@
+stages:
+  validate:
+    cmd: >-
+      python pipeline/scripts/validate.py
+      --coco data/raw/coco.json
+      --out data/processed/coco.validated.json
+    deps:
+      - data/raw/coco.json
+      - pipeline/src/dataset_pipeline/coco
+      - pipeline/scripts/validate.py
+    outs:
+      - data/processed/coco.validated.json
+
+  analyze:
+    cmd: >-
+      python pipeline/scripts/analyze.py
+      --coco data/processed/coco.validated.json
+      --images-dir data/raw/images
+      --quality-policy quality.yaml
+      --out data/processed/quality_metrics.json
+    deps:
+      - data/processed/coco.validated.json
+      - data/raw/images
+      - pipeline/src/dataset_pipeline/analyzers
+      - pipeline/scripts/analyze.py
+      - quality.yaml
+    outs:
+      - data/processed/quality_metrics.json
+
+  split:
+    cmd: >-
+      python pipeline/scripts/split.py
+      --coco data/processed/coco.validated.json
+      --splits-config splits.yaml
+      --quality-metrics data/processed/quality_metrics.json
+      --out data/processed/splits.json
+    deps:
+      - data/processed/coco.validated.json
+      - data/processed/quality_metrics.json
+      - pipeline/src/dataset_pipeline/splits
+      - pipeline/scripts/split.py
+      - splits.yaml
+    outs:
+      - data/processed/splits.json

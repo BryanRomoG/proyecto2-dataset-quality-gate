@@ -59,3 +59,26 @@ def test_min_images_per_class_sin_categorias_es_cero():
     dataset = CocoDataset(info=INFO, licenses=[], images=[], annotations=[], categories=[])
 
     assert min_images_per_class(dataset) == 0.0
+
+
+def test_min_images_per_class_ignora_categorias_declaradas_sin_anotaciones():
+    dataset = CocoDataset(
+        info=INFO,
+        licenses=[],
+        images=[_image(1), _image(2)],
+        annotations=[
+            _annotation(1, image_id=1, category_id=1),
+            _annotation(2, image_id=2, category_id=1),
+            _annotation(3, image_id=1, category_id=2),
+        ],
+        categories=[
+            CocoCategory(id=1, name="car", supercategory="none"),
+            CocoCategory(id=2, name="person", supercategory="none"),
+            # sembradas por el portal, sin una sola caja:
+            CocoCategory(id=3, name="dog", supercategory="none"),
+            CocoCategory(id=4, name="bicycle", supercategory="none"),
+        ],
+    )
+
+    # car=2, person=1; dog/bicycle no son clases del dataset -> mínimo 1, no 0.
+    assert min_images_per_class(dataset) == 1.0
