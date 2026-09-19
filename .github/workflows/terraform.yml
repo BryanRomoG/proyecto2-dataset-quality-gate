@@ -37,6 +37,27 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # TEMPORAL — debug del error "Not authorized to perform
+      # sts:AssumeRoleWithWebIdentity": la trust policy en AWS ya se
+      # verificó correcta a mano, así que hay que ver el token real que
+      # emite GitHub para este run. Solo imprime claims públicos (aud,
+      # sub, repository, ref, event_name), nunca el JWT firmado completo.
+      # Quitar este paso en cuanto se resuelva.
+      - name: Debug OIDC token claims
+        if: matrix.layer == 'network'
+        run: |
+          python3 - <<'EOF'
+          import json, base64, urllib.request, os
+          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com"
+          req = urllib.request.Request(url, headers={"Authorization": "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]})
+          tok = json.load(urllib.request.urlopen(req))["value"]
+          payload = tok.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+          keys = ["aud", "sub", "repository", "repository_owner", "ref", "event_name", "job_workflow_ref"]
+          print(json.dumps({k: claims.get(k) for k in keys}, indent=2))
+          EOF
+
       # Cero llaves estáticas: se autentica con el rol IAM de solo lectura
       # creado en infra/cicd/ vía OIDC, nunca con AWS_ACCESS_KEY_ID/SECRET.
       - name: Configure AWS credentials (OIDC)
