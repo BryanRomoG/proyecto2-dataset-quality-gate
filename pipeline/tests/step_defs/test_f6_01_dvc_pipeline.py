@@ -18,9 +18,7 @@ scenarios(str(REPO_ROOT / "features" / "specs" / "f6-01-dvc-pipeline.feature"))
 
 
 def _dvc(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["dvc", *args], cwd=REPO_ROOT, capture_output=True, text=True
-    )
+    return subprocess.run(["dvc", *args], cwd=REPO_ROOT, capture_output=True, text=True)
 
 
 # --- dvc repro es idempotente ---
@@ -86,9 +84,7 @@ def only_affected_stage_reran(context: dict) -> None:
     finally:
         # Restaurar el archivo y el estado del pipeline, sin dejar el
         # working tree modificado después del test.
-        context["splits_config_path"].write_text(
-            context["original_content"], encoding="utf-8"
-        )
+        context["splits_config_path"].write_text(context["original_content"], encoding="utf-8")
         _dvc("repro")
 
 

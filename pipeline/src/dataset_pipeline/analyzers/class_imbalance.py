@@ -13,7 +13,10 @@ class ClassImbalanceReport(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     counts: dict[str, int]
-    majority_minority_ratio: float
+    # None cuando una clase tiene 0 imágenes: dividir entre 0 no da un ratio
+    # (antes salía `Infinity`, que no es JSON estándar: jq y JSON.parse lo
+    # rechazan).
+    majority_minority_ratio: float | None
     classes_below_minimum: list[str]
 
 
@@ -31,12 +34,10 @@ def analyze_class_imbalance(
     counts = list(image_counts_per_class.values())
     majority = max(counts)
     minority = min(counts)
-    ratio = (majority / minority) if minority > 0 else float("inf")
+    ratio = (majority / minority) if minority > 0 else None
 
     below_minimum = sorted(
-        name
-        for name, count in image_counts_per_class.items()
-        if count < min_images_per_class
+        name for name, count in image_counts_per_class.items() if count < min_images_per_class
     )
 
     return ClassImbalanceReport(
