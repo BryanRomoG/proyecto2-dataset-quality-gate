@@ -13,7 +13,7 @@ versiones exactas de `pipeline/requirements.lock`:
 uv venv --python 3.12 .venv            # o cualquier Python 3.12
 uv pip install -r pipeline/requirements.lock && uv pip install --no-deps -e pipeline
 # regenerar el lock tras cambiar dependencias:
-uv pip compile pipeline/pyproject.toml --extra dev --python-version 3.12 -o pipeline/requirements.lock
+uv pip compile pipeline/pyproject.toml --extra dev --universal --python-version 3.12 -o pipeline/requirements.lock
 ```
 
 ## Setup
